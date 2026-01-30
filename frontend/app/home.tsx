@@ -4,12 +4,13 @@ import React, { useState, useEffect } from "react";
 
 export default function Home() {
   const [time, setTime] = useState<string>("");
+  const [name, setName] = useState<string | null>(null);
+  const [nameInput, setNameInput] = useState<string>("");
 
   // 시계 기능: 1초마다 현재 시간 업데이트
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      // 오후 5:01 같은 형식 (Windows 95 스타일)
       const timeString = now.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
@@ -18,18 +19,33 @@ export default function Home() {
       setTime(timeString);
     };
 
-    updateTime(); // 초기 실행
+    updateTime();
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
   }, []);
 
+  const handleNameSubmit = () => {
+    const trimmed = nameInput.trim();
+    if (trimmed) {
+      setName(trimmed);
+    }
+  };
+
+  const showNameDialog = name === null;
+
   return (
-    <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center p-4 font-sans select-none overflow-hidden">
-      {/* CRT 모니터 본체 */}
-      <div className="relative bg-[#dcdcdc] p-8 rounded-xl shadow-[0_0_0_2px_#a0a0a0,0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-5xl aspect-[4/3] flex flex-col border-b-8 border-r-8 border-[#909090]">
+    <div className="h-screen bg-[#1a1a1a] flex items-center justify-center p-4 font-sans select-none overflow-hidden">
+      {/* CRT 모니터 본체 - viewport에 맞게 축소 */}
+      <div
+        className="relative bg-[#dcdcdc] p-8 rounded-xl shadow-[0_0_0_2px_#a0a0a0,0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-5xl aspect-[4/3] flex flex-col border-b-8 border-r-8 border-[#909090]"
+        style={{ maxHeight: "calc(100vh - 2rem)", width: "min(100%, min(80rem, (100vh - 2rem) * 4 / 3))" }}
+      >
         
         {/* 모니터 상단 곡선 디테일 */}
         <div className="absolute top-2 left-4 right-4 h-2 bg-[#e8e8e8] rounded-full opacity-50"></div>
+
+        {/* 카메라 구멍 (상단 중앙) */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-black shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] border border-[#404040]"></div>
 
         {/* 스크린 베젤 (화면 안쪽 검은 테두리) */}
         <div className="flex-1 bg-[#111] p-4 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,1)] border-[16px] border-[#a0a0a0] border-t-[#808080] border-l-[#808080] border-b-[#e0e0e0] border-r-[#e0e0e0] relative overflow-hidden">
@@ -37,9 +53,86 @@ export default function Home() {
           {/* 실제 화면 영역 (CRT 느낌의 곡률과 스캔라인 효과는 CSS로 흉내 가능하지만 가독성을 위해 생략) */}
           <div className="w-full h-full bg-[#008080] flex flex-col justify-between relative shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]">
             
-            {/* 바탕화면 영역 (아이콘 없음) */}
+            {/* 바탕화면 영역 */}
             <div className="flex-1 relative">
-              {/* 여기에 추후 아이콘 컴포넌트 추가 가능 */}
+              {/* loop.exe desktop icon - top left */}
+              <button
+                type="button"
+                className="absolute top-4 left-4 flex flex-col items-center gap-1.5 w-[72px] p-1 rounded-none outline-none select-none cursor-pointer border-0 border-transparent active:bg-[#000080] group"
+                onClick={() => {}}
+              >
+                <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 bg-white rounded-sm shadow-[inset_1px_1px_0_#fff,1px_1px_0_#808080] border border-[#c0c0c0]">
+                  {/* Windows .exe style icon: window with blue title bar */}
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="5" width="20" height="14" fill="#c0c0c0" stroke="#808080" strokeWidth="1" />
+                    <rect x="2" y="5" width="20" height="4" fill="#000080" />
+                    <rect x="4" y="7" width="4" height="1" fill="#fff" />
+                    <rect x="11" y="11" width="8" height="1" fill="#000" />
+                    <rect x="11" y="14" width="6" height="1" fill="#000" />
+                  </svg>
+                </div>
+                <span
+                  className="text-[11px] font-normal text-center leading-tight px-0.5 break-words max-w-[72px] text-black group-active:text-white group-active:[text-shadow:none]"
+                  style={{ textShadow: "1px 0 0 #fff, 0 1px 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff" }}
+                >
+                  loop.exe
+                </span>
+              </button>
+
+              {/* "What is your name?" dialog - Windows 95 style */}
+              {showNameDialog && (
+                <div className="absolute inset-0 flex items-center justify-center z-20 p-8">
+                  <div
+                    className="w-full max-w-sm bg-[#c0c0c0] flex flex-col shadow-[2px_2px_0_#fff,inset_2px_2px_0_#808080] border-2 border-t-[#dfdfdf] border-l-[#dfdfdf] border-b-[#808080] border-r-[#808080]"
+                    style={{ boxShadow: "2px 2px 0 #0a0a0a" }}
+                  >
+                    {/* Title bar - Windows 95 blue */}
+                    <div
+                      className="flex items-center justify-between px-2 py-1 h-7"
+                      style={{
+                        background: "linear-gradient(90deg, #000080 0%, #1084d0 100%)",
+                      }}
+                    >
+                      <span className="text-white text-sm font-bold" style={{ textShadow: "1px 1px 0 #000" }}>
+                        What is your name?
+                      </span>
+                      <div className="flex gap-0.5">
+                        <div className="w-4 h-4 flex items-center justify-center text-white text-xs font-bold bg-[#c0c0c0] border border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080] text-black">−</div>
+                        <div className="w-4 h-4 flex items-center justify-center text-black text-xs font-bold bg-[#c0c0c0] border border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080]">□</div>
+                        <div className="w-4 h-4 flex items-center justify-center text-black text-xs font-bold bg-[#c0c0c0] border border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080]">×</div>
+                      </div>
+                    </div>
+                    {/* Content */}
+                    <div className="p-4 flex flex-col gap-4">
+                      <input
+                        type="text"
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleNameSubmit()}
+                        placeholder="Name"
+                        className="w-full px-2 py-1.5 bg-white border-2 border-t-[#808080] border-l-[#808080] border-b-[#dfdfdf] border-r-[#dfdfdf] outline-none text-sm text-black placeholder:text-[#808080]"
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={handleNameSubmit}
+                          className="px-4 py-1 min-w-[75px] h-7 bg-[#c0c0c0] border-2 border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080] text-sm font-bold text-black active:border-t-[#808080] active:border-l-[#808080] active:border-b-[#fff] active:border-r-[#fff] outline-none"
+                        >
+                          OK
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setName("")}
+                          className="px-4 py-1 min-w-[75px] h-7 bg-[#c0c0c0] border-2 border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080] text-sm font-bold text-black active:border-t-[#808080] active:border-l-[#808080] active:border-b-[#fff] active:border-r-[#fff] outline-none"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 작업 표시줄 (Taskbar) */}
@@ -73,13 +166,8 @@ export default function Home() {
           <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-white opacity-[0.03] pointer-events-none rounded-lg"></div>
         </div>
 
-        {/* 모니터 하단 로고 및 전원 버튼 */}
-        <div className="h-16 flex justify-between items-center px-8 pt-4">
-            {/* 로고 */}
-            <div className="text-[#606060] font-sans font-bold text-lg tracking-widest opacity-80" style={{ fontFamily: "Arial, sans-serif" }}>
-                NETFLIX
-            </div>
-
+        {/* 모니터 하단 전원 버튼 */}
+        <div className="h-16 flex justify-end items-center px-8 pt-4">
             {/* 컨트롤 패널 */}
             <div className="flex items-center gap-6">
                 {/* 메뉴 버튼들 */}
