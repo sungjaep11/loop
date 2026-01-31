@@ -10,7 +10,7 @@ const BiometricCursor = ({ stressLevel = 0 }) => {
 
             // Add trail point
             if (stressLevel > 0) {
-                setTrail(prev => [...prev.slice(-5), { x: e.clientX, y: e.clientY, id: Date.now() }]);
+                setTrail(prev => [...prev.slice(-5), { x: e.clientX, y: e.clientY, id: `${Date.now()}-${Math.random()}` }]);
             }
         };
 

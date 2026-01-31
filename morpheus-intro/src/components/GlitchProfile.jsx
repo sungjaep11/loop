@@ -81,34 +81,51 @@ const GlitchProfile = ({ onComplete }) => {
             {/* Background with one glitched file */}
             {!showModal && (
                 <div style={{
+                    position: 'absolute',
+                    top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
                     display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100%',
                     flexDirection: 'column',
-                    gap: '20px'
+                    alignItems: 'center',
+                    gap: '20px',
+                    zIndex: 50
                 }}>
-                    <div style={{ color: '#aaa', fontSize: '0.9rem' }}>SYSTEM IDLE...</div>
-
-                    <div
+                    <div className="glass-panel"
                         onClick={handleOpen}
-                        className="glitch-file"
                         style={{
-                            width: '120px',
-                            height: '160px',
-                            background: '#333',
-                            color: 'red',
+                            padding: '20px 30px',
                             display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
                             alignItems: 'center',
+                            gap: '20px',
                             cursor: 'pointer',
-                            animation: 'shake 0.5s infinite',
-                            position: 'relative'
+                            border: '1px solid #ff4444',
+                            background: 'rgba(20, 0, 0, 0.6)',
+                            boxShadow: '0 0 30px rgba(255, 0, 0, 0.2)',
+                            animation: 'pulse 2s infinite'
                         }}
                     >
-                        <div style={{ fontSize: '3rem' }}>⚠️</div>
-                        <div style={{ fontSize: '0.6rem', padding: '4px', textAlign: 'center' }}>Project_Morpheus_Profile.dat</div>
+                        <div style={{
+                            fontSize: '2rem',
+                            background: '#ff4444',
+                            width: '50px', height: '50px',
+                            borderRadius: '8px',
+                            display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            color: '#fff'
+                        }}>
+                            ⚠️
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontFamily: "'Space Mono', monospace", color: '#ff4444', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '1px' }}>
+                                SYSTEM ALERT
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: '#eee', marginTop: '4px' }}>
+                                Corrupted Data Fragment Found
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: '#888', marginTop: '2px' }}>
+                                Click to quarantine file
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}
@@ -118,7 +135,8 @@ const GlitchProfile = ({ onComplete }) => {
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.9)',
+                    background: 'rgba(0,0,0,0.85)',
+                    backdropFilter: 'blur(10px)',
                     zIndex: 100,
                     display: 'flex',
                     justifyContent: 'center',
@@ -127,54 +145,100 @@ const GlitchProfile = ({ onComplete }) => {
                 }}>
                     {/* AIDRA Warning */}
                     <div style={{
-                        color: 'red',
-                        fontFamily: 'monospace',
-                        marginBottom: '20px',
-                        fontSize: '1.2rem',
-                        textShadow: '2px 2px red'
+                        color: '#ff4444',
+                        fontFamily: "'Space Mono', monospace",
+                        marginBottom: '30px',
+                        fontSize: '1rem',
+                        letterSpacing: '2px',
+                        background: 'rgba(50,0,0,0.5)',
+                        padding: '10px 20px',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase'
                     }} className="glitch-text">
-                        AIDRA: ERROR. FILE RESTRICTED. CLOSE IMMEDIATELY.
+                        ⚠ Critical Security Violation
                     </div>
 
                     <div className="glass-panel" style={{
                         width: '600px',
-                        background: '#000',
-                        border: '1px solid red',
-                        color: '#0f0',
-                        padding: '40px',
-                        fontFamily: 'Courier New, monospace',
+                        maxWidth: '90vw',
+                        background: 'rgba(10, 10, 10, 0.6)', // Darker glass
+                        border: '1px solid rgba(255, 68, 68, 0.3)',
+                        color: '#eee',
+                        padding: '50px',
+                        fontFamily: "'Space Mono', monospace",
                         position: 'relative',
-                        boxShadow: '0 0 20px rgba(255, 0, 0, 0.5)'
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                        borderRadius: '12px'
                     }}>
-                        <h2 style={{ borderBottom: '1px solid #0f0', paddingBottom: '10px' }}>SUBJECT ANALYSIS #402</h2>
+                        {/* Header Decoration */}
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: '#ff4444' }}></div>
 
-                        <div style={{ marginTop: '20px', lineHeight: '2' }}>
-                            <p>USER_AGENT: {userData.userAgent}</p>
-                            <p>PLATFORM: {userData.platform} ({userData.cores} Cores)</p>
-                            <p>SCREEN: {userData.screen}</p>
-                            <p>BATTERY: {userData.battery}</p>
-                            <p>LOCAL_TIME: {userData.time}</p>
-                            <p style={{ color: 'red', marginTop: '20px', fontWeight: 'bold' }}>
-                                &gt;&gt; MATCH CONFIRMED. TARGET LOCKED.
-                            </p>
+                        <h2 style={{
+                            borderBottom: '1px solid rgba(255,255,255,0.1)',
+                            paddingBottom: '20px',
+                            marginBottom: '30px',
+                            fontWeight: 400,
+                            letterSpacing: '1px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <span>SUBJECT ANALYSIS</span>
+                            <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>#402</span>
+                        </h2>
+
+                        <div style={{ display: 'grid', gap: '15px', fontSize: '0.9rem', color: '#ccc' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ opacity: 0.5 }}>PLATFORM</span>
+                                <span>{userData.platform}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ opacity: 0.5 }}>CORES</span>
+                                <span>{userData.cores}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ opacity: 0.5 }}>BATTERY</span>
+                                <span style={{ color: userData.battery.includes('Charging') ? '#0f0' : 'inherit' }}>{userData.battery}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ opacity: 0.5 }}>TIME_LOCAL</span>
+                                <span>{userData.time}</span>
+                            </div>
+                        </div>
+
+                        <div style={{
+                            marginTop: '40px',
+                            padding: '15px',
+                            background: 'rgba(255, 68, 68, 0.1)',
+                            borderLeft: '2px solid #ff4444',
+                            color: '#ffaaaa',
+                            fontSize: '0.8rem'
+                        }}>
+                            &gt;&gt; UNAUTHORIZED DATA HARVESTING DETECTED.<br />
+                            &gt;&gt; IMMEDIATE TERMINATION REQUIRED.
                         </div>
 
                         <button
                             onClick={handleClose}
                             style={{
                                 marginTop: '40px',
-                                background: 'red',
-                                color: 'white',
+                                background: '#fff',
+                                color: '#000',
                                 border: 'none',
-                                padding: '10px 30px',
-                                fontSize: '1rem',
+                                padding: '16px 32px',
+                                fontSize: '0.9rem',
                                 cursor: 'pointer',
-                                fontFamily: 'Inter, sans-serif',
+                                fontFamily: "'Space Mono', monospace",
                                 fontWeight: 'bold',
-                                width: '100%'
+                                width: '100%',
+                                letterSpacing: '2px',
+                                transition: 'transform 0.2s',
+                                borderRadius: '4px'
                             }}
+                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                         >
-                            CLOSE VIEWER
+                            [ SYSTEM_REBOOT ]
                         </button>
                     </div>
                 </div>

@@ -42,7 +42,8 @@ const WallpaperEyes = () => {
             display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)',
             pointerEvents: 'none',
             zIndex: -1,
-            opacity: 0.1
+            opacity: 0.05, /* Much more subtle */
+            filter: 'blur(1px)' /* Soften the look */
         }}>
             {eyes.map(eye => (
                 <div key={eye.id} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

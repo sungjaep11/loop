@@ -1,69 +1,187 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import WallpaperEyes from './MicroInteractions/WallpaperEyes';
 import SalaryCounter from './MicroInteractions/SalaryCounter';
+import GlitchProfile from './GlitchProfile';
 
-const WorkplaceScene = ({ onComplete }) => {
+const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) => {
     const [score, setScore] = useState(0);
     const [currentFile, setCurrentFile] = useState(null);
-    const [dragActive, setDragActive] = useState(null); // 'approve' or 'reject'
+    const [dragActive, setDragActive] = useState(null);
     const [message, setMessage] = useState("Initializing workspace protocol...");
+    const [glitchActive, setGlitchActive] = useState(false);
 
-    // File names generator
-    const fileNames = [
-        "Q3_Financial_Report.pdf", "Employee_Compliance.docx", "Lunch_Menu_Week42.xlsx",
-        "Server_Maintenance_Log.txt", "Asset_Allocation_v2.pdf", "Meeting_Minutes_0120.docx"
+    // Audio Refs
+    const bgmRef = useRef(null);
+
+    // File names
+    const normalFiles = [
+        "2024_Marketing_Trends.pdf", "Cafeteria_Menu.xlsx", "Quarterly_Compliance.docx",
+        "Asset_List_v4.pdf", "Meeting_Minutes_Final.txt"
     ];
 
+    // Initial Setup
+    useEffect(() => {
+        setCurrentFile(generateFile());
+
+        // Start Jazz BGM
+        try {
+            bgmRef.current = new Audio('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112778.mp3');
+            bgmRef.current.loop = true;
+            bgmRef.current.volume = 0.5;
+
+            const playPromise = bgmRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("BGM Autoplay prevented. Waiting for interaction.");
+                    // Optional: Add a one-time click listener to start it
+                    const resumeAudio = () => {
+                        bgmRef.current && bgmRef.current.play();
+                        window.removeEventListener('click', resumeAudio);
+                    };
+                    window.addEventListener('click', resumeAudio);
+                });
+            }
+        } catch (e) {
+            console.error("Audio setup failed", e);
+        }
+
+        return () => {
+            if (bgmRef.current) {
+                bgmRef.current.pause();
+                bgmRef.current.src = ""; // Unload
+                bgmRef.current = null;
+            }
+        };
+    }, []);
+
+    // AIDRA Compliments Loop
+    useEffect(() => {
+        if (isGlitch || isResistance) return;
+
+        const compliments = [
+            "Your efficiency is in the top 3.2%.",
+            "Keep up the rhythm, #402.",
+            "Visual cortex engagement: Optimal.",
+            "The company values your dedication.",
+            "Did you have your coffee? You seem energized."
+        ];
+
+        const interval = setInterval(() => {
+            setMessage(compliments[Math.floor(Math.random() * compliments.length)]);
+        }, 8000);
+
+        return () => clearInterval(interval);
+    }, [isGlitch, isResistance]);
+
+    // Glitch Phase Trigger
+    useEffect(() => {
+        if (isGlitch) {
+            setMessage("Error... Data corruption detected...");
+            if (bgmRef.current) bgmRef.current.playbackRate = 0.5; // Slow down music
+
+            // Trigger overlay after delay
+            setTimeout(() => setGlitchActive(true), 2000);
+
+            setTimeout(() => {
+                onComplete();
+            }, 8000); // Auto-advance to next for demo flow? Or wait for interaction?
+        }
+    }, [isGlitch, onComplete]);
+
     const generateFile = () => {
-        const name = fileNames[Math.floor(Math.random() * fileNames.length)];
+        const name = normalFiles[Math.floor(Math.random() * normalFiles.length)];
         return { id: Date.now(), name };
     };
 
-    useEffect(() => {
-        // Initial file
-        setCurrentFile(generateFile());
+    const playSound = (type) => {
+        // Simple synth sounds for UI
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-        // Initial AIDRA message
-        setTimeout(() => {
-            setMessage("Optimal performance detected. Keep up the good work, #402.");
-        }, 2000);
-    }, []);
-
-    useEffect(() => {
-        // Scene transition trigger
-        if (score >= 5) {
-            setTimeout(() => {
-                onComplete();
-            }, 1000);
-        }
-    }, [score, onComplete]);
-
-    const playTrashSound = () => {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-
-            // Glitchy scream-like sound
-            osc.type = 'sawtooth';
-            // Random pitch shift
-            const startFreq = 200 + Math.random() * 300;
-            osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
-
-            gain.gain.setValueAtTime(0.2, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
+        if (type === 'drop') {
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
             osc.start();
-            osc.stop(ctx.currentTime + 0.3);
-        } catch (e) { }
+            osc.stop(ctx.currentTime + 0.1);
+        } else if (type === 'approve') {
+            osc.frequency.setValueAtTime(400, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        }
     };
 
-    const handleDragStart = (e, file) => {
-        e.dataTransfer.setData("fileId", file.id);
-        e.dataTransfer.effectAllowed = "move";
+    const [tutorialStep, setTutorialStep] = useState(0); // 0: Intro, 1: Approve, 2: Hold, 3: Done
+
+    // ... (existing refs)
+
+    // ... (existing useEffects)
+
+    // Tutorial Logic
+    useEffect(() => {
+        if (!isGlitch && !isResistance && score === 0 && tutorialStep === 0) {
+            setMessage("Initializing... Protocol #402 loaded.");
+            setTimeout(() => {
+                setMessage("Step 1: Sorting calibration required.");
+                setTutorialStep(1); // Prompt Approve
+            }, 3000);
+        }
+    }, [isGlitch, isResistance, score, tutorialStep]);
+
+    const handleDrop = (e, zone) => {
+        e.preventDefault();
+        setDragActive(null);
+
+        // Tutorial Guard Rails
+        if (tutorialStep === 1) {
+            if (zone === 'approve') {
+                playSound('approve');
+                setMessage("Correct. Now calibrate retention protocols.");
+                setTutorialStep(2); // Prompt Hold
+                return; // Don't score yet, just advance tutorial
+            } else {
+                setMessage("Error. Drag LEFT to Approve.");
+                return;
+            }
+        }
+
+        if (tutorialStep === 2) {
+            if (zone === 'reject') {
+                playSound('drop');
+                setMessage("Calibration complete. Begin standard processing.");
+                setTutorialStep(3); // Tutorial Done
+                setTimeout(() => setCurrentFile(generateFile()), 1000); // Allow delay to read
+                return;
+            } else {
+                setMessage("Error. Drag RIGHT to Hold.");
+                return;
+            }
+        }
+
+        // Normal Gameplay
+        if (isResistance && zone === 'reject') {
+            // ...
+        }
+
+        playSound(zone === 'approve' ? 'approve' : 'drop');
+        setScore(pre => pre + 1);
+        setCurrentFile(null);
+        setTimeout(() => setCurrentFile(generateFile()), 300);
+
+        if (!isGlitch && !isResistance && score >= 5) {
+            // Visual feedback via message before transition
+            setMessage("Quota met. Calibrating next module...");
+            setTimeout(() => {
+                onComplete(); // Transition to Glitch
+            }, 2000);
+        }
     };
 
     const handleDragOver = (e, zone) => {
@@ -71,191 +189,136 @@ const WorkplaceScene = ({ onComplete }) => {
         setDragActive(zone);
     };
 
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        setDragActive(null);
-    };
-
-    const handleDrop = (e, zone) => {
-        e.preventDefault();
-        setDragActive(null);
-        const fileId = e.dataTransfer.getData("fileId");
-
-        if (fileId && currentFile && currentFile.id.toString() === fileId.toString()) {
-            if (zone === 'reject') {
-                // Play trash/scream sound
-                // playTrashSound(); // Assuming this function exists elsewhere or will be added
-            }
-
-            // Success drop
-            setScore(prev => prev + 1);
-
-            // Play click sound (placeholder)
-            // playClickSound();
-
-            // Animation or localized effect could go here
-
-            // Generate new file
-            setCurrentFile(null); // Clear briefly for animation
-            setTimeout(() => {
-                setCurrentFile(generateFile());
-            }, 300);
-        }
-    };
-
     return (
-        <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            fontFamily: "'Inter', sans-serif"
-        }} className="animate-fade-in">
-
-            {/* Background Eyes */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
             <WallpaperEyes />
-
-            {/* Salary Counter */}
             <SalaryCounter />
 
-            {/* Top Bar / HUD */}
+            {/* Header HUD */}
             <div className="glass-panel" style={{
-                position: 'absolute',
-                top: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                padding: '12px 24px',
-                display: 'flex',
-                gap: '24px',
-                alignItems: 'center',
-                zIndex: 10
+                position: 'absolute', top: 30, left: '50%', transform: 'translateX(-50%)',
+                padding: '12px 40px', zIndex: 10,
+                borderRadius: '50px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
             }}>
-                <span className="mono" style={{ fontSize: '0.8rem', color: '#666' }}>WORK_QUEUE</span>
-                <span className="mono" style={{ fontSize: '1.2rem', fontWeight: 700 }}>{score} / 5</span>
+                <span className="mono" style={{ fontSize: '0.9rem', color: '#888', marginRight: '15px' }}>PROCESSED</span>
+                <span style={{ fontWeight: 700, fontSize: '1.5rem', fontFamily: "'Space Mono', monospace" }}>{score} / 5</span>
             </div>
 
-            {/* AIDRA Message Area */}
-            <div style={{
-                position: 'absolute',
-                bottom: '40px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                textAlign: 'center',
-                width: '600px',
-                color: '#444'
+            {/* AIDRA Message - Bottom Floating rounded pill */}
+            <div className="glass-panel" style={{
+                position: 'absolute', bottom: 60, left: '50%', transform: 'translateX(-50%)',
+                padding: '16px 32px', borderRadius: '16px',
+                textAlign: 'center', width: 'auto', maxWidth: '600px',
+                border: '1px solid rgba(0,0,0,0.1)',
+                zIndex: 20
             }}>
-                <div style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.1em',
-                    marginBottom: '8px',
-                    color: '#aaa'
-                }}>AIDRA SYSTEM</div>
-                <div className="mono" style={{ fontSize: '0.9rem', minHeight: '1.4em' }}>
-                    {/* Simple typewriter effect could be added here, static for now */}
-                    {/* <Typewriter text={message} /> */}
-                    {message}
-                </div>
+                <div style={{ fontSize: '0.7rem', letterSpacing: '2px', color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>AIDRA OS v9.4</div>
+                <div style={{ fontSize: '1.1rem', color: '#111', fontWeight: 500 }}>{message}</div>
             </div>
 
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                position: 'relative',
-                zIndex: 1
-            }}>
-                {/* Left Zone: Approve */}
+            {/* Work Zones */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'stretch', zIndex: 5 }}>
+                {/* Left Zone: APPROVE */}
                 <div
                     onDragOver={(e) => handleDragOver(e, 'approve')}
-                    onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, 'approve')}
                     style={{
-                        flex: 1,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRight: '1px solid rgba(0,0,0,0.05)',
-                        backgroundColor: dragActive === 'approve' ? 'rgba(0,0,0,0.02)' : 'transparent',
-                        transition: 'background-color 0.2s'
+                        flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        transition: 'all 0.3s ease',
+                        background: dragActive === 'approve' ? 'rgba(0,0,0,0.03)' : 'transparent',
+                        position: 'relative',
+                        boxShadow: tutorialStep === 1 ? 'inset 0 0 50px rgba(0,255,0,0.1)' : 'none' // Tutorial Highlight
                     }}
                 >
                     <div style={{
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.2em',
-                        color: dragActive === 'approve' ? '#000' : '#ddd',
-                        fontWeight: 700,
-                        fontSize: '2rem',
                         transform: 'rotate(-90deg)',
-                        pointerEvents: 'none'
-                    }}>Approve</div>
+                        opacity: (dragActive === 'approve' || tutorialStep === 1) ? 1 : 0.3,
+                        transition: 'opacity 0.3s',
+                        textAlign: 'center',
+                        color: tutorialStep === 1 ? '#000' : 'inherit'
+                    }}>
+                        <div style={{ fontSize: '4rem', lineHeight: 1 }}>←</div>
+                        <div style={{ fontSize: '1rem', letterSpacing: '0.2em', fontWeight: 600, marginTop: '10px' }}>
+                            {tutorialStep === 1 ? "DRAG HERE" : "APPROVE"}
+                        </div>
+                    </div>
+                    {/* Subtle Guide Line */}
+                    <div style={{ position: 'absolute', right: 0, top: '20%', bottom: '20%', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.1), transparent)' }}></div>
                 </div>
 
-                {/* Center: File Stack */}
-                <div style={{
-                    width: '300px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    position: 'relative'
-                }}>
-                    {currentFile && (
-                        <div
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, currentFile)}
-                            className="file-card glass-panel"
-                            style={{
-                                width: '180px',
-                                height: '240px',
-                                padding: '24px',
-                                cursor: 'grab',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                transition: 'transform 0.2s',
-                                backgroundColor: '#fff'
-                            }}
-                        >
-                            <div style={{ width: '40px', height: '40px', background: '#eee', borderRadius: '4px' }}></div>
-                            <div style={{ fontSize: '0.9rem', fontWeight: 600, wordBreak: 'break-all' }}>
-                                {currentFile.name}
+                {/* Center Stage */}
+                <div style={{ width: 400, display: 'flex', justifyContent: 'center', alignItems: 'center', perspective: '1000px' }}>
+                    {currentFile ? (
+                        <div draggable onDragStart={(e) => { e.dataTransfer.setData("id", currentFile.id); }} style={{
+                            width: 280, height: 380, background: '#fff',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column',
+                            cursor: 'grab', borderRadius: '4px', overflow: 'hidden',
+                            transition: 'transform 0.2s, box-shadow 0.2s',
+                            transform: dragActive ? 'rotate(2deg) scale(1.02)' : 'rotate(0deg)'
+                        }}>
+                            {/* File Header */}
+                            <div style={{ height: '6px', background: '#111' }}></div>
+                            <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ width: '40px', height: '40px', background: '#f0f0f0', borderRadius: '50%', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>📄</span>
+                                </div>
+                                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: '#999', marginBottom: '5px' }}>DOC_ID: {currentFile.id}</div>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 700, lineHeight: 1.3, marginBottom: '20px' }}>
+                                    {currentFile.name.replace(/_/g, ' ').replace('.pdf', '').replace('.docx', '')}
+                                </div>
+
+                                {/* Fake Content Lines */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto', opacity: 0.5 }}>
+                                    <div style={{ height: '4px', background: '#eee', width: '100%' }}></div>
+                                    <div style={{ height: '4px', background: '#eee', width: '80%' }}></div>
+                                    <div style={{ height: '4px', background: '#eee', width: '90%' }}></div>
+                                </div>
                             </div>
-                            <div className="mono" style={{ fontSize: '0.6rem', color: '#999' }}>
-                                DOC_ID: {currentFile.id}
+                            {/* Footer */}
+                            <div style={{ padding: '15px 30px', borderTop: '1px solid #f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.6rem', color: '#aaa', fontWeight: 600 }}>CONFIDENTIAL</span>
+                                <div style={{ width: '6px', height: '6px', background: '#aaa', borderRadius: '50%' }}></div>
                             </div>
                         </div>
-                    )}
-
-                    {!currentFile && (
-                        <div style={{ opacity: 0.3 }}>Processing...</div>
+                    ) : (
+                        <div style={{ color: '#ccc', letterSpacing: '1px', fontSize: '0.9rem' }} className="animate-pulse">Fetching next assignment...</div>
                     )}
                 </div>
 
-                {/* Right Zone: Reject/Hold */}
+                {/* Right Zone: HOLD */}
                 <div
                     onDragOver={(e) => handleDragOver(e, 'reject')}
-                    onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, 'reject')}
                     style={{
-                        flex: 1,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderLeft: '1px solid rgba(0,0,0,0.05)',
-                        backgroundColor: dragActive === 'reject' ? 'rgba(0,0,0,0.02)' : 'transparent',
-                        transition: 'background-color 0.2s'
+                        flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        transition: 'all 0.3s ease',
+                        background: dragActive === 'reject' ? 'rgba(0,0,0,0.03)' : 'transparent',
+                        position: 'relative',
+                        boxShadow: tutorialStep === 2 ? 'inset 0 0 50px rgba(0,0,0,0.1)' : 'none' // Tutorial Highlight
                     }}
                 >
+                    {/* Subtle Guide Line */}
+                    <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.1), transparent)' }}></div>
+
                     <div style={{
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.2em',
-                        color: dragActive === 'reject' ? '#000' : '#ddd',
-                        fontWeight: 700,
-                        fontSize: '2rem',
                         transform: 'rotate(90deg)',
-                        pointerEvents: 'none'
-                    }}>Hold</div>
+                        opacity: (dragActive === 'reject' || tutorialStep === 2) ? 1 : 0.3,
+                        transition: 'opacity 0.3s',
+                        textAlign: 'center',
+                        color: tutorialStep === 2 ? '#000' : 'inherit'
+                    }}>
+                        <div style={{ fontSize: '4rem', lineHeight: 1 }}>→</div>
+                        <div style={{ fontSize: '1rem', letterSpacing: '0.2em', fontWeight: 600, marginTop: '10px' }}>
+                            {tutorialStep === 2 ? "DRAG HERE" : "HOLD"}
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {glitchActive && <GlitchProfile onComplete={onComplete} />}
         </div>
     );
 };
