@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:loop && next build",
+    "build:loop": "cd loop && npm install && npm run build",
     "start": "next start",
     "lint": "eslint"
   },

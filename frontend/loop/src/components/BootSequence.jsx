@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioStore } from '../stores/audioStore';
 import { CRTScreen } from './common/CRTScreen';
 
@@ -25,8 +25,16 @@ const bootLines = [
 const BootSequence = ({ onComplete }) => {
     const [visibleLines, setVisibleLines] = useState([]);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [showProgressBar, setShowProgressBar] = useState(true);
     const [showContinue, setShowContinue] = useState(false);
     const playSFX = useAudioStore((s) => s.playSFX);
+
+    // Hide progress bar 1 second after it reaches 100% so the button shifts up
+    useEffect(() => {
+        if (loadingProgress < 100) return;
+        const timer = setTimeout(() => setShowProgressBar(false), 1000);
+        return () => clearTimeout(timer);
+    }, [loadingProgress]);
 
     useEffect(() => {
         console.log('BootSequence: Mounted');
@@ -70,7 +78,7 @@ const BootSequence = ({ onComplete }) => {
                 background: '#0a0a0f',
                 color: '#00ff41',
                 fontFamily: "'Space Mono', monospace",
-                padding: '40px',
+                padding: '40px 40px 56px 40px',
                 overflow: 'hidden',
                 fontSize: '0.9rem'
             }}>
@@ -96,9 +104,16 @@ const BootSequence = ({ onComplete }) => {
                         ))}
                     </div>
 
-                    {/* Loading bar */}
-                    {loadingProgress > 0 && (
-                        <div style={{ marginBottom: '2rem' }}>
+                    {/* Loading bar - disappears 1s after reaching 100% so button shifts up */}
+                    <AnimatePresence>
+                    {loadingProgress > 0 && showProgressBar && (
+                        <motion.div
+                            key="progress-bar"
+                            style={{ marginBottom: '2rem' }}
+                            initial={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: 'hidden' }}
+                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                        >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                 <span>[</span>
                                 <div style={{ flex: 1, height: '16px', background: '#16213e', border: '1px solid #00ff41', position: 'relative' }}>
@@ -109,8 +124,9 @@ const BootSequence = ({ onComplete }) => {
                                 <span>]</span>
                                 <span>{loadingProgress}%</span>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
+                    </AnimatePresence>
 
                     {/* Complete message */}
                     {loadingProgress >= 100 && (
@@ -122,10 +138,10 @@ const BootSequence = ({ onComplete }) => {
                         </motion.div>
                     )}
 
-                    {/* Continue button */}
+                    {/* Continue button - padding bottom so it isn't cut off */}
                     {showContinue && (
                         <motion.div
-                            style={{ marginTop: '2rem', textAlign: 'center' }}
+                            style={{ marginTop: '2rem', textAlign: 'center', paddingBottom: '28px' }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                         >
