@@ -4,7 +4,7 @@ import { devtools } from 'zustand/middleware';
 const initialState = {
     // Game Phase
     currentPhase: 0, // 0: Not Started, 1: Recruitment, 2: Routine, 3: Awakening, 4: Truth
-    currentScene: 'opening',
+    currentScene: 'prologue',
 
     // Phase 1 Progress
     hasWatchedVideo: false,
@@ -38,7 +38,11 @@ export const useGameStore = create(
 
             // Phase Management
             setPhase: (phase) => set({ currentPhase: phase }),
-            setScene: (scene) => set({ currentScene: scene }),
+            setScene: (scene) => {
+                console.log('[gameStore] setScene called:', scene, new Date().toISOString());
+                console.trace('setScene stack trace');
+                set({ currentScene: scene });
+            },
 
             startGame: () => set({
                 currentPhase: 1,
@@ -53,7 +57,9 @@ export const useGameStore = create(
             // Phase 1 Actions
             completeVideo: () => set({ hasWatchedVideo: true }),
 
-            completeBoot: () => set({ currentScene: 'video' }),
+            completeBoot: () => set({ currentScene: 'desktop' }), // Updated to go to desktop from boot logic if used externally
+
+            // ... existing ...
 
             attemptContract: () => set((state) => ({
                 contractAttempts: state.contractAttempts + 1,
@@ -79,12 +85,12 @@ export const useGameStore = create(
             })),
 
             setClassificationPhase: (phase) => set({ classificationPhase: phase }),
-            
+
             recordVeraOverride: () => set((state) => ({
                 veraOverrideCount: state.veraOverrideCount + 1,
                 complianceScore: Math.min(100, state.complianceScore + 5),
             })),
-            
+
             recordPlayerResistance: () => set((state) => ({
                 playerResistanceCount: state.playerResistanceCount + 1,
                 complianceScore: Math.max(0, state.complianceScore - 10),

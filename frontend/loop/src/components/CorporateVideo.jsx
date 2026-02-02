@@ -62,19 +62,29 @@ const CorporateVideo = ({ onComplete }) => {
     const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
     const [isEnding, setIsEnding] = useState(false);
 
+    const timersRef = React.useRef([]);
+
     useEffect(() => {
         let totalDelay = 0;
 
         videoScenes.forEach((scene, index) => {
             if (index > 0) {
-                setTimeout(() => setCurrentSceneIndex(index), totalDelay);
+                const id = setTimeout(() => setCurrentSceneIndex(index), totalDelay);
+                timersRef.current.push(id);
             }
             totalDelay += scene.duration;
         });
 
-        setTimeout(() => setIsEnding(true), totalDelay);
-        setTimeout(() => onComplete(), totalDelay + 3000);
-    }, [onComplete]);
+        const endingTimer = setTimeout(() => setIsEnding(true), totalDelay);
+        timersRef.current.push(endingTimer);
+
+        const completeTimer = setTimeout(() => onComplete(), totalDelay + 3000);
+        timersRef.current.push(completeTimer);
+
+        return () => {
+            timersRef.current.forEach(id => clearTimeout(id));
+        };
+    }, []); // Run once on mount
 
     const currentScene = videoScenes[currentSceneIndex];
     const isPurpleAccent = currentScene?.accent === 'purple';
