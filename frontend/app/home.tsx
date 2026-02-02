@@ -6,6 +6,7 @@ export default function Home() {
   const [time, setTime] = useState<string>("");
   const [name, setName] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState<string>("");
+  const [loopAppOpen, setLoopAppOpen] = useState(false);
 
   // 시계 기능: 1초마다 현재 시간 업데이트
   useEffect(() => {
@@ -34,11 +35,11 @@ export default function Home() {
   const showNameDialog = name === null;
 
   return (
-    <div className="h-screen bg-[#1a1a1a] flex items-center justify-center p-4 font-sans select-none overflow-hidden">
-      {/* CRT 모니터 본체 - viewport에 맞게 축소 */}
+    <div className="h-screen bg-[#1a1a1a] flex items-center justify-center p-2 font-sans select-none overflow-hidden">
+      {/* CRT 모니터 본체 - 16:9 to match loop gameplay so entire loop screen is shown */}
       <div
-        className="relative bg-[#dcdcdc] p-8 rounded-xl shadow-[0_0_0_2px_#a0a0a0,0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-5xl aspect-[4/3] flex flex-col border-b-8 border-r-8 border-[#909090]"
-        style={{ maxHeight: "calc(100vh - 2rem)", width: "min(100%, min(80rem, (100vh - 2rem) * 4 / 3))" }}
+        className="relative bg-[#dcdcdc] pt-8 px-4 pb-4 rounded-xl shadow-[0_0_0_2px_#a0a0a0,0_20px_40px_rgba(0,0,0,0.5)] w-full max-w-[90vw] aspect-video flex flex-col min-h-0 border-b-6 border-r-6 border-[#909090]"
+        style={{ maxHeight: "calc(100vh - 1rem)", width: "min(90vw, (100vh - 1rem) * 16 / 9)" }}
       >
         
         {/* 모니터 상단 곡선 디테일 */}
@@ -47,19 +48,19 @@ export default function Home() {
         {/* 카메라 구멍 (상단 중앙) */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-black shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] border border-[#404040]"></div>
 
-        {/* 스크린 베젤 (화면 안쪽 검은 테두리) */}
-        <div className="flex-1 bg-[#111] p-4 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,1)] border-[16px] border-[#a0a0a0] border-t-[#808080] border-l-[#808080] border-b-[#e0e0e0] border-r-[#e0e0e0] relative overflow-hidden">
+        {/* 스크린 베젤 (화면 안쪽 검은 테두리) - tighter so loop gets more space */}
+        <div className="flex-1 min-h-0 bg-[#111] pt-3 px-1.5 pb-1.5 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,1)] border-[8px] border-[#a0a0a0] border-t-[#808080] border-l-[#808080] border-b-[#e0e0e0] border-r-[#e0e0e0] relative overflow-hidden">
           
           {/* 실제 화면 영역 (CRT 느낌의 곡률과 스캔라인 효과는 CSS로 흉내 가능하지만 가독성을 위해 생략) */}
-          <div className="w-full h-full bg-[#008080] flex flex-col justify-between relative shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]">
+          <div className="w-full h-full min-h-0 bg-[#008080] flex flex-col justify-between relative shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]">
             
             {/* 바탕화면 영역 */}
-            <div className="flex-1 relative">
+            <div className="flex-1 min-h-0 relative">
               {/* loop.exe desktop icon - top left */}
               <button
                 type="button"
                 className="absolute top-4 left-4 flex flex-col items-center gap-1.5 w-[72px] p-1 rounded-none outline-none select-none cursor-pointer border-0 border-transparent active:bg-[#000080] group"
-                onClick={() => {}}
+                onDoubleClick={() => setLoopAppOpen(true)}
               >
                 <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 bg-white rounded-sm shadow-[inset_1px_1px_0_#fff,1px_1px_0_#808080] border border-[#c0c0c0]">
                   {/* Windows .exe style icon: window with blue title bar */}
@@ -78,6 +79,41 @@ export default function Home() {
                   loop.exe
                 </span>
               </button>
+
+              {/* loop.exe window - fills desktop when open */}
+              {loopAppOpen && (
+                <div className="absolute inset-0 z-10 flex flex-col bg-[#c0c0c0] shadow-[2px_2px_0_#fff,inset_2px_2px_0_#808080] border-2 border-t-[#dfdfdf] border-l-[#dfdfdf] border-b-[#808080] border-r-[#808080]">
+                  {/* Title bar */}
+                  <div
+                    className="flex items-center justify-between px-2 py-0.5 h-6 flex-shrink-0"
+                    style={{ background: "linear-gradient(90deg, #000080 0%, #1084d0 100%)" }}
+                  >
+                    <span className="text-white text-xs font-bold" style={{ textShadow: "1px 1px 0 #000" }}>
+                      loop.exe
+                    </span>
+                    <div className="flex gap-0.5">
+                      <div className="w-3.5 h-3.5 flex items-center justify-center text-black text-[10px] font-bold bg-[#c0c0c0] border border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080]">−</div>
+                      <div className="w-3.5 h-3.5 flex items-center justify-center text-black text-[10px] font-bold bg-[#c0c0c0] border border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080]">□</div>
+                      <button
+                        type="button"
+                        onClick={() => setLoopAppOpen(false)}
+                        className="w-3.5 h-3.5 flex items-center justify-center text-black text-[10px] font-bold bg-[#c0c0c0] border border-t-[#fff] border-l-[#fff] border-b-[#808080] border-r-[#808080] hover:bg-[#ff0000] hover:text-white outline-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                  {/* Window content - iframe fills window */}
+                  <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
+                    <iframe
+                      title="loop"
+                      src="/loop/index.html"
+                      className="absolute border-0 bg-black"
+                      style={{ width: '125%', height: '125%', transform: 'scale(0.8)' }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* "What is your name?" dialog - Windows 95 style */}
               {showNameDialog && (
@@ -135,8 +171,9 @@ export default function Home() {
               )}
             </div>
 
-            {/* 작업 표시줄 (Taskbar) */}
-            <div className="h-[34px] bg-[#c0c0c0] border-t-2 border-white flex items-center justify-between px-1 relative z-10 shadow-md">
+            {/* 작업 표시줄 (Taskbar) - hidden when loop game is running */}
+            {!loopAppOpen && (
+            <div className="h-[34px] flex-shrink-0 bg-[#c0c0c0] border-t-2 border-white flex items-center justify-between px-1 relative z-10 shadow-md">
               
               {/* 시작 버튼 */}
               <button className="flex items-center gap-1.5 px-2 py-0.5 h-[26px] bg-[#c0c0c0] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-black active:border-t-black active:border-l-black active:border-b-white active:border-r-white active:bg-[#b0b0b0] shadow-sm outline-none">
@@ -160,6 +197,7 @@ export default function Home() {
                 <span className="text-xs font-medium text-black">{time}</span>
               </div>
             </div>
+            )}
           </div>
           
           {/* 화면 반사광 (Glossy Effect) */}
@@ -167,7 +205,7 @@ export default function Home() {
         </div>
 
         {/* 모니터 하단 전원 버튼 */}
-        <div className="h-16 flex justify-end items-center px-8 pt-4">
+        <div className="h-8 flex flex-shrink-0 justify-end items-center px-4 pt-2">
             {/* 컨트롤 패널 */}
             <div className="flex items-center gap-6">
                 {/* 메뉴 버튼들 */}

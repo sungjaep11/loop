@@ -1410,7 +1410,7 @@ export function BootSequence() {
                          hover:bg-terminal-green hover:text-black transition-all
                          animate-pulse"
             >
-              [ PRESS ENTER OR CLICK TO CONTINUE ]
+              [ CLICK TO CONTINUE ]
             </button>
           </motion.div>
         )}
