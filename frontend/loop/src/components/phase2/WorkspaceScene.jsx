@@ -11,11 +11,11 @@ import { FileProcessor } from './FileProcessor';
 import { OutputPanels } from './OutputPanels';
 import { MetricsPanel } from './MetricsPanel';
 import { EmployeeCard } from '../ui/EmployeeCard';
-import { 
-    allEmotionFiles, 
-    resetFiles, 
-    getPhaseByFileId, 
-    requiresOverride 
+import {
+    allEmotionFiles,
+    resetFiles,
+    getPhaseByFileId,
+    requiresOverride
 } from '../../data/emotionFiles';
 
 export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
@@ -26,15 +26,15 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
     const [filesQueue, setFilesQueue] = useState([]);
     const [processedCount, setProcessedCount] = useState(0);
     const [currentPhase, setCurrentPhase] = useState(1);
-    
+
     // V.E.R.A. override state
     const [isOverriding, setIsOverriding] = useState(false);
     const [pendingOverride, setPendingOverride] = useState(null);
-    
+
     // Webcam state for Phase 4
     const [webcamImage, setWebcamImage] = useState(null);
     const [isEliminateMode, setIsEliminateMode] = useState(false);
-    
+
     // Phase 3.1: Termination Option
     const [showTerminationOption, setShowTerminationOption] = useState(false);
 
@@ -67,6 +67,8 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
         } else {
             queue = [...allEmotionFiles];
+            playAmbient('officeAmbient'); // Start lo-fi music!
+
             setTimeout(() => {
                 setVeraMessage({
                     text: "Good morning, Employee #402. I am V.E.R.A., your Virtual Emotion Recognition Assistant.",
@@ -94,7 +96,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         if (currentFile && currentFile.type === 'webcam') {
             setWebcamImage(capturedPhoto);
             setIsEliminateMode(true);
-            
+
             // V.E.R.A. dramatic reveal
             setTimeout(() => {
                 setVeraMessage({
@@ -103,7 +105,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                     type: 'warning'
                 });
             }, 1000);
-            
+
             setTimeout(() => {
                 setVeraMessage({
                     text: currentFile.veraMessage,
@@ -165,13 +167,13 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         if (requiresOverride(file)) {
             const playerChoice = action;
             const expectedChoice = file.playerExpected;
-            
+
             // If player chose what V.E.R.A. expects to override
             if (playerChoice === expectedChoice) {
                 // V.E.R.A. OVERRIDE!
                 setIsOverriding(true);
                 playSFX('error');
-                
+
                 setVeraMessage({
                     text: file.veraMessage,
                     duration: 5000,
@@ -182,7 +184,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 setTimeout(() => {
                     const overrideAction = file.veraOverride;
                     playSFX('success');
-                    
+
                     if (overrideAction === 'delete') {
                         setVeraMessage({
                             text: "Data purged from system.",
@@ -190,11 +192,11 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                             type: 'warning'
                         });
                     }
-                    
+
                     moveToNextFile();
                     setIsOverriding(false);
                 }, 5500);
-                
+
                 setActiveId(null);
                 return;
             }
@@ -202,7 +204,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
         // Normal processing (Phase 1 or correct Phase 2/3 choice)
         playSFX('success');
-        
+
         // Phase 4 - Eliminate button triggers glitch
         if (isEliminateMode && action === 'negative') {
             setVeraMessage({
@@ -210,12 +212,12 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 duration: 3000,
                 type: 'error'
             });
-            
+
             setTimeout(() => {
                 // Trigger Critical Error and transition
                 onComplete();
             }, 3500);
-            
+
             setActiveId(null);
             return;
         }
@@ -250,7 +252,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 setCurrentFileIndex(nextIndex);
                 const nextFile = filesQueue[nextIndex];
                 setCurrentFile(nextFile);
-                
+
                 const nextPhase = getPhaseByFileId(nextFile.id);
                 if (nextPhase !== currentPhase) {
                     setCurrentPhase(nextPhase);
@@ -315,11 +317,10 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             {/* Phase indicator overlay */}
             {currentPhase >= 2 && (
                 <motion.div
-                    className={`absolute top-0 left-0 right-0 h-1 ${
-                        currentPhase === 2 ? 'bg-yellow-500' :
-                        currentPhase === 3 ? 'bg-orange-500' :
-                        'bg-red-600'
-                    }`}
+                    className={`absolute top-0 left-0 right-0 h-1 ${currentPhase === 2 ? 'bg-yellow-500' :
+                            currentPhase === 3 ? 'bg-orange-500' :
+                                'bg-red-600'
+                        }`}
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.5 }}
@@ -334,11 +335,10 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                         Emotion Classification System v9.4 {mode === 'recovery' ? '(RECOVERED)' : ''}
                     </span>
                     {currentPhase > 1 && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                            currentPhase === 2 ? 'bg-yellow-500 text-black' :
-                            currentPhase === 3 ? 'bg-orange-500' :
-                            'bg-red-600 animate-pulse'
-                        }`}>
+                        <span className={`text-xs px-2 py-0.5 rounded ${currentPhase === 2 ? 'bg-yellow-500 text-black' :
+                                currentPhase === 3 ? 'bg-orange-500' :
+                                    'bg-red-600 animate-pulse'
+                            }`}>
                             PHASE {currentPhase}
                         </span>
                     )}
@@ -421,9 +421,8 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
                     <DragOverlay>
                         {activeId && currentFile && (
-                            <div className={`w-80 p-4 rounded shadow-2xl opacity-80 rotate-3 cursor-grabbing ${
-                                isEliminateMode ? 'bg-red-900 text-white' : 'bg-white text-black'
-                            }`}>
+                            <div className={`w-80 p-4 rounded shadow-2xl opacity-80 rotate-3 cursor-grabbing ${isEliminateMode ? 'bg-red-900 text-white' : 'bg-white text-black'
+                                }`}>
                                 <p className="font-mono text-sm font-bold">
                                     {currentFile.type === 'text' ? `"${currentFile.content}"` : currentFile.emoji || '📁'}
                                 </p>
@@ -437,9 +436,9 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             <footer className="bg-gray-900 px-4 py-1 text-[10px] text-gray-500 flex items-center justify-between border-t border-gray-800 z-10 font-mono">
                 <span>Terminal: WS-1987-402</span>
                 <span>Status: <span className={currentPhase >= 3 ? 'text-orange-500' : 'text-green-500'}>●</span> {
-                    mode === 'recovery' ? 'MONITORED' : 
-                    currentPhase >= 3 ? 'ELEVATED MONITORING' : 
-                    'SIGNAL STABLE'
+                    mode === 'recovery' ? 'MONITORED' :
+                        currentPhase >= 3 ? 'ELEVATED MONITORING' :
+                            'SIGNAL STABLE'
                 }</span>
             </footer>
         </motion.div>

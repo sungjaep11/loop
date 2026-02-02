@@ -53,10 +53,15 @@ class SynthEngine {
 
 const synth = new SynthEngine();
 
+// Ambient audio element for background music
+let ambientAudio = null;
+const LOFI_MUSIC_URL = 'https://cdn.pixabay.com/audio/2022/10/25/audio_f4c93c03ae.mp3'; // Lofi study music (public domain)
+
 export const useAudioStore = create((set, get) => ({
     audioEnabled: true,
     masterVolume: 0.5,
     isInitialized: false,
+    currentAmbient: null,
 
     initAudio: () => {
         if (synth.ctx && synth.ctx.state === 'suspended') {
@@ -115,14 +120,54 @@ export const useAudioStore = create((set, get) => ({
     },
 
     playAmbient: (name) => {
-        // Placeholder for ambient loops
         if (!get().audioEnabled) return;
+        const currentAmbient = get().currentAmbient;
+
+        // Don't restart if already playing same ambient
+        if (currentAmbient === name && ambientAudio && !ambientAudio.paused) {
+            return;
+        }
+
+        // Stop existing ambient
+        if (ambientAudio) {
+            ambientAudio.pause();
+            ambientAudio = null;
+        }
+
         console.log(`Playing ambient: ${name}`);
+
+        // Use lo-fi music for workspace/office ambient
+        if (name === 'officeAmbient' || name === 'lofi' || name === 'workspace') {
+            ambientAudio = new Audio(LOFI_MUSIC_URL);
+            ambientAudio.loop = true;
+            ambientAudio.volume = 0.3; // Background volume
+            ambientAudio.play().catch(err => {
+                console.warn('Ambient audio autoplay blocked:', err);
+            });
+            set({ currentAmbient: name });
+        } else if (name === 'fluorescentHum') {
+            // Silent for now - could add hum sound later
+            set({ currentAmbient: name });
+        }
     },
 
     stopAmbient: () => {
-        // Stop logic
+        if (ambientAudio) {
+            ambientAudio.pause();
+            ambientAudio.currentTime = 0;
+            ambientAudio = null;
+        }
+        set({ currentAmbient: null });
     },
 
-    toggleAudio: () => set(state => ({ audioEnabled: !state.audioEnabled })),
+    toggleAudio: () => {
+        const newState = !get().audioEnabled;
+        if (!newState && ambientAudio) {
+            ambientAudio.pause();
+        } else if (newState && get().currentAmbient) {
+            // Resume ambient if was playing
+            get().playAmbient(get().currentAmbient);
+        }
+        set({ audioEnabled: newState });
+    },
 }));

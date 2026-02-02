@@ -3,27 +3,29 @@ import { AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../stores/gameStore';
 
 // Phase 0: Prologue Components
+import { PrologueScene } from './phase0/PrologueScene';
+import { VirtualDesktop } from './phase0/VirtualDesktop';
+
+// Phase 1 Components
 import OpeningSequence from './OpeningSequence';
 import BootSequence from './BootSequence';
 import CorporateVideo from './CorporateVideo';
 import ContractModal from './ContractModal';
-import IdentityVerification from './IdentityVerification';
 
-// Phase 1-4: Classification Workspace
+// Phase 2 Components
 import WorkspaceScene from './phase2/WorkspaceScene';
 
-// Phase 5: Discovery & Confrontation
-import { LockdownSequence } from './phase3/LockdownSequence';
+// Phase 3 Components (Awakening)
 import { ResignationForm } from './phase3/ResignationForm';
+import { LockdownSequence } from './phase3/LockdownSequence';
+import { GlitchScene } from './GlitchScene';
 
-// Phase 6: Truth & Ending
+// Phase 4 Components (Truth)
+import { InvestigationDesktop } from './phase4/InvestigationDesktop';
 import { MirrorScene } from './phase4/MirrorScene';
 import { TerminalScene } from './phase4/TerminalScene';
 import { EndingScreens } from './phase4/EndingScreens';
-
-// New: Glitch/Error Scene (Critical Error after Phase 4)
-import { GlitchScene } from './GlitchScene';
-
+import { DebugSceneSwitcher } from './DebugSceneSwitcher';
 
 export function GameController() {
     const currentScene = useGameStore((state) => state.currentScene);
@@ -32,63 +34,87 @@ export function GameController() {
 
     const renderScene = () => {
         switch (currentScene) {
-            // === PROLOGUE (Scene 0) ===
+            // === PROLOGUE & SETUP ===
             case 'opening':
-                return <OpeningSequence onComplete={() => setScene('boot')} />;
+                // Brand intro -> Email notification
+                return <OpeningSequence onComplete={() => setScene('prologue')} />;
+            case 'prologue':
+                // Job Offer Email
+                return <PrologueScene onComplete={() => setScene('boot')} />;
             case 'boot':
-                return <BootSequence onComplete={() => setScene('video')} />;
+                // System Boot -> Virtual OS
+                return <BootSequence onComplete={() => setScene('desktop')} />;
+            case 'desktop':
+                // Registration & Install
+                return <VirtualDesktop onComplete={() => setScene('video')} />;
+
+            // === ONBOARDING ===
             case 'video':
+                // Corporate Indoctrination
                 return <CorporateVideo onComplete={() => setScene('contract')} />;
             case 'contract':
-                return <ContractModal onAgree={() => setScene('identity')} />;
-            case 'identity':
-                return <IdentityVerification onComplete={() => setScene('workspace')} />;
-            
-            // === SCENE 1: Classification Work (Phase 1-4) ===
+                // Employment Contract
+                return <ContractModal onAgree={() => setScene('workspace')} />;
+
+            // === PHASE 2: WORK ===
             case 'workspace':
-                // After Phase 4 elimination trigger -> glitch scene
-                return <WorkspaceScene mode="normal" onComplete={() => setScene('glitch')} />;
-            
-            // === SCENE 2: Critical Error / V.E.R.A. Surveillance ===
+                // Main Game Loop (Phase 1-3)
+                // Passing onComplete for when the "game" breaks or ends
+                return <WorkspaceScene onComplete={() => setScene('investigation')} />;
+
+            // === PHASE 3: AWAKENING ===
             case 'glitch':
-                return <GlitchScene onComplete={() => setScene('lockdown')} />;
-            
-            // === SCENE 3: Lockdown & Verification ===
+                // System crash / VERA encounter
+                return <GlitchScene onComplete={() => setScene('false_normalcy')} />;
+
+            case 'false_normalcy':
+                // "False Normalcy" (Recovery Mode)
+                return <WorkspaceScene mode="recovery" onComplete={() => setScene('resignation')} />;
+
+            case 'resignation':
+                // Attempt to leave
+                return <ResignationForm />;
+
             case 'lockdown':
+                // Verification checkpoint
                 return <LockdownSequence />;
-            
-            // === SCENE 4: Mirror / Terminal ===
+
+            // === PHASE 4: TRUTH ===
+            case 'investigation':
+                // Hidden Desktop containing puzzles
+                return <InvestigationDesktop onComplete={() => setScene('terminal')} />;
+
             case 'mirror':
                 return <MirrorScene />;
             case 'terminal':
+                // Final interaction
                 return <TerminalScene />;
-            
-            // === False Normalcy (optional loop) ===
-            case 'false_normalcy':
-                return <WorkspaceScene mode="recovery" onComplete={() => setScene('resignation')} />;
-            case 'resignation':
-                return <ResignationForm />;
-            
-            // === ENDING ===
+
             case 'ending':
                 return <EndingScreens />;
-            
+
             default:
                 if (endingReached) {
                     return <EndingScreens />;
                 }
-                return <OpeningSequence onComplete={() => setScene('boot')} />;
+                console.warn('Unknown scene:', currentScene);
+                return (
+                    <div className="text-white bg-red-900 p-4">
+                        Error: Unknown scene "{currentScene}"
+                        <button className="block mt-4 border p-2" onClick={() => setScene('boot')}>Return to Boot</button>
+                    </div>
+                );
         }
     };
 
+    console.log('GameController render:', currentScene);
+
     return (
-        <AnimatePresence mode="wait">
-            {renderScene()}
-        </AnimatePresence>
+        <>
+            <DebugSceneSwitcher />
+            <AnimatePresence mode="wait">
+                {renderScene()}
+            </AnimatePresence>
+        </>
     );
 }
-
-// Note: We need to ensure TerminalScene triggers a scene change to 'ending' 
-// OR we check endingReached state globally.
-// A cleaner way is to have TerminalScene call setScene('ending') AFTER setting the ending type.
-

@@ -30,6 +30,10 @@ export const usePlayerStore = create((set, get) => ({
     setWebcamError: (error) => set({ webcamError: error }),
     setCapturedPhoto: (dataUrl) => set({ capturedPhoto: dataUrl }),
 
+    // Player Identity
+    playerName: '',
+    setPlayerName: (name) => set({ playerName: name }),
+
     updateMousePosition: (x, y) => {
         const { lastMousePosition } = get();
         const dx = x - lastMousePosition.x;
