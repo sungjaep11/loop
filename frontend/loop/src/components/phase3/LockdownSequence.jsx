@@ -18,11 +18,29 @@ export function LockdownSequence() {
     const pathRef = useRef([]); // To keep track without re-rendering too often
 
     const setScene = useGameStore((s) => s.setScene);
+    const setWebcamPermission = useGameStore((s) => s.setWebcamPermission);
     const webcamAllowed = useGameStore((s) => s.webcamAllowed);
     const failCompliance = useGameStore((s) => s.failCompliance);
 
     const { videoRef, requestWebcam } = useWebcam();
+    const webcamStream = usePlayerStore((s) => s.webcamStream);
     const mousePosition = usePlayerStore((s) => s.lastMousePosition);
+
+    // Assign stream to video when it mounts (video only renders in stage 2)
+    useEffect(() => {
+        if (stage !== 2 || !webcamAllowed || !webcamStream) return;
+
+        const applyStream = () => {
+            if (videoRef.current && webcamStream) {
+                videoRef.current.srcObject = webcamStream;
+                videoRef.current.play().catch(() => {});
+            }
+        };
+
+        applyStream();
+        const retry = setTimeout(applyStream, 100);
+        return () => clearTimeout(retry);
+    }, [stage, webcamAllowed, webcamStream]);
 
     const playSFX = useAudioStore((s) => s.playSFX);
     const playAmbient = useAudioStore((s) => s.playAmbient);
@@ -89,6 +107,7 @@ export function LockdownSequence() {
             }
         } else {
             // Webcam denied by user choice
+            setWebcamPermission(false);
             setStage(2);
         }
     };
@@ -139,7 +158,7 @@ export function LockdownSequence() {
                                 <div className="text-left bg-red-950/30 p-6 border border-red-900">
                                     <p className="text-red-400 mb-4">EMPLOYEE #402 HAS VIOLATED:</p>
                                     <ul className="space-y-2 text-sm text-red-200">
-                                        <li>- Article 3.1 (Follow all AIDRA directives)</li>
+                                        <li>- Article 3.1 (Follow all V.E.R.A. directives)</li>
                                         <li>- Article 5.2 (Termination procedures)</li>
                                         <li>- Article 6.1 (Special provisions) [CLASSIFIED]</li>
                                     </ul>
@@ -238,49 +257,60 @@ export function LockdownSequence() {
                             </div>
                         ) : (
                             /* ROUTE B: WEBCAM DENIED */
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 1 }}
-                                    className="text-center space-y-8 z-20 bg-black/50 p-8"
-                                >
-                                    <h1 className="text-6xl text-white font-bold tracking-tighter">CAMERA ACCESS DENIED</h1>
-
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                {/* Completion overlay - shown before transition to mirror */}
+                                {verificationProgress >= 100 ? (
+                                    <div className="absolute inset-0 bg-black flex items-center justify-center z-50">
+                                        <div className="text-center">
+                                            <h1 className="text-4xl text-green-500 font-bold mb-4">ANALYSIS COMPLETE</h1>
+                                            <p className="text-white text-xl">SUBJECT: OBSERVABLE THROUGH ALTERNATIVE MEANS</p>
+                                            <p className="text-gray-500 mt-4">PROCEEDING TO FINAL PHASE</p>
+                                        </div>
+                                    </div>
+                                ) : (
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        transition={{ delay: 4 }}
-                                        className="space-y-4"
+                                        transition={{ delay: 1 }}
+                                        className="text-center space-y-8 z-20 bg-black/50 p-8 pointer-events-none"
                                     >
-                                        <p className="text-2xl text-red-500">INTERESTING</p>
-                                        <p className="text-white">YOU THINK THAT PROTECTS YOU?</p>
-                                        <p className="text-white">WE DON'T NEED YOUR CAMERA</p>
-                                        <p className="text-red-500 text-3xl font-bold">WE HAVE OTHER WAYS</p>
-                                    </motion.div>
+                                        <h1 className="text-6xl text-white font-bold tracking-tighter">CAMERA ACCESS DENIED</h1>
 
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: 8 }}
-                                        className="space-y-4 pt-8"
-                                    >
-                                        <p className="text-red-400">YOUR CURSOR TELLS US EVERYTHING</p>
-                                        <p className="text-gray-400 text-sm">THE HESITATION BEFORE CLICKING...</p>
-                                        <p className="text-gray-400 text-sm">THE TREMBLING MOVEMENTS...</p>
-                                        <p className="text-gray-400 text-sm">THE DESPERATE SEARCH FOR AN EXIT...</p>
-                                    </motion.div>
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 4 }}
+                                            className="space-y-4"
+                                        >
+                                            <p className="text-2xl text-red-500">INTERESTING</p>
+                                            <p className="text-white">YOU THINK THAT PROTECTS YOU?</p>
+                                            <p className="text-white">WE DON'T NEED YOUR CAMERA</p>
+                                            <p className="text-red-500 text-3xl font-bold">WE HAVE OTHER WAYS</p>
+                                        </motion.div>
 
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: 12 }}
-                                        className="pt-8"
-                                    >
-                                        <p className="text-4xl text-white font-bold">WE SEE YOUR FEAR, #402</p>
-                                        <p className="text-red-600 text-xl tracking-widest mt-2">WE ALWAYS HAVE</p>
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 8 }}
+                                            className="space-y-4 pt-8"
+                                        >
+                                            <p className="text-red-400">YOUR CURSOR TELLS US EVERYTHING</p>
+                                            <p className="text-gray-400 text-sm">THE HESITATION BEFORE CLICKING...</p>
+                                            <p className="text-gray-400 text-sm">THE TREMBLING MOVEMENTS...</p>
+                                            <p className="text-gray-400 text-sm">THE DESPERATE SEARCH FOR AN EXIT...</p>
+                                        </motion.div>
+
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 12 }}
+                                            className="pt-8"
+                                        >
+                                            <p className="text-4xl text-white font-bold">WE SEE YOUR FEAR, #402</p>
+                                            <p className="text-red-600 text-xl tracking-widest mt-2">WE ALWAYS HAVE</p>
+                                        </motion.div>
                                     </motion.div>
-                                </motion.div>
+                                )}
                             </div>
                         )}
                     </motion.div>

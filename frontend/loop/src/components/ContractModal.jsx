@@ -1,20 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '../stores/gameStore';
 import { useAudioStore } from '../stores/audioStore';
-import { contractText } from '../data/contractText'; // Adjusted import path
+import { contractText } from '../data/contractText';
 
 export default function ContractModal({ onAgree }) {
-    const [checkboxAttempts, setCheckboxAttempts] = useState(0);
     const [isChecked, setIsChecked] = useState(false);
-    const [declineClicked, setDeclineClicked] = useState(false);
     const [showStamp, setShowStamp] = useState(false);
     const [scrolledToBottom, setScrolledToBottom] = useState(false);
 
     const scrollRef = useRef(null);
+    const acceptTimerRef = useRef(null);
 
-    // Direct use of callbacks or store
     const playSFX = useAudioStore((s) => s.playSFX);
+
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            if (acceptTimerRef.current) clearTimeout(acceptTimerRef.current);
+        };
+    }, []);
+
+    // If content doesn't overflow, consider scrolled (e.g. small viewport)
+    useEffect(() => {
+        const check = () => {
+            if (scrollRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                if (scrollHeight <= clientHeight + 10 || scrollTop + clientHeight >= scrollHeight - 50) {
+                    setScrolledToBottom(true);
+                }
+            }
+        };
+        check();
+        const t = setTimeout(check, 100); // Recheck after layout
+        return () => clearTimeout(t);
+    }, [contractText]);
 
     // Track scroll position
     const handleScroll = () => {
@@ -26,39 +45,29 @@ export default function ContractModal({ onAgree }) {
         }
     };
 
-    // Handle checkbox click
     const handleCheckbox = () => {
         playSFX('click');
-
-        if (checkboxAttempts < 2) {
-            setIsChecked(true);
-            setTimeout(() => {
-                setIsChecked(false);
-                playSFX('error');
-            }, 500);
-            setCheckboxAttempts((prev) => prev + 1);
-        } else {
-            setIsChecked(true);
-        }
+        setIsChecked((prev) => !prev);
     };
 
-    // Handle decline button
     const handleDecline = () => {
         playSFX('error');
-        setDeclineClicked(true);
     };
 
-    // Handle accept button
+    // Handle accept button - requires scroll + checkbox
     const handleAccept = () => {
-        if (!isChecked) return;
+        if (!isChecked || !scrolledToBottom || showStamp) return;
 
         playSFX('stamp');
         setShowStamp(true);
 
-        setTimeout(() => {
-            onAgree(); // Transition to next scene
+        acceptTimerRef.current = setTimeout(() => {
+            onAgree?.();
+            acceptTimerRef.current = null;
         }, 1500);
     };
+
+    const canAccept = isChecked && scrolledToBottom && !showStamp;
 
     return (
         <motion.div
@@ -77,7 +86,7 @@ export default function ContractModal({ onAgree }) {
                 {/* Header */}
                 <div className="bg-gray-800 text-white px-6 py-4 flex items-center justify-between" style={{ background: '#1f2937', color: 'white', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                        <h1 className="text-xl font-bold" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>NEOGEN CORPORATION</h1>
+                        <h1 className="text-xl font-bold" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>S.A.V.E.</h1>
                         <p className="text-sm text-gray-300" style={{ fontSize: '0.875rem', color: '#d1d5db' }}>Employment Agreement</p>
                     </div>
                     <div className="text-right text-sm" style={{ textAlign: 'right', fontSize: '0.875rem' }}>
@@ -138,8 +147,9 @@ export default function ContractModal({ onAgree }) {
                     {/* Checkbox */}
                     <div className="flex items-center gap-3 mb-4" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                         <button
+                            type="button"
                             onClick={handleCheckbox}
-                            className={`w-6 h-6 border-2 rounded flex items-center justify-center transition-colors`}
+                            className={`w-6 h-6 border-2 rounded flex items-center justify-center transition-colors flex-shrink-0`}
                             style={{
                                 width: '1.5rem',
                                 height: '1.5rem',
@@ -162,68 +172,55 @@ export default function ContractModal({ onAgree }) {
                                 </motion.span>
                             )}
                         </button>
-                        <label className="text-sm" style={{ fontSize: '0.875rem' }}>
+                        <span
+                            className="text-sm cursor-pointer select-none"
+                            style={{ fontSize: '0.875rem', cursor: 'pointer' }}
+                            onClick={handleCheckbox}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCheckbox(); } }}
+                            role="button"
+                            tabIndex={0}
+                        >
                             I have read and agree to all terms
-                            {checkboxAttempts > 0 && checkboxAttempts < 3 && (
-                                <span className="text-red-500 ml-2" style={{ color: '#ef4444', marginLeft: '0.5rem' }}>
-                                    (Please read carefully)
-                                </span>
-                            )}
-                        </label>
+                        </span>
                     </div>
 
                     {/* Buttons */}
                     <div className="flex gap-4" style={{ display: 'flex', gap: '1rem' }}>
                         <motion.button
                             onClick={handleAccept}
-                            disabled={!isChecked || showStamp}
+                            disabled={!canAccept}
                             style={{
                                 flex: 1,
                                 padding: '0.75rem',
                                 borderRadius: '0.25rem',
                                 fontWeight: 'bold',
-                                background: isChecked && !showStamp ? '#16a34a' : '#d1d5db',
-                                color: isChecked && !showStamp ? 'white' : '#6b7280',
-                                cursor: isChecked && !showStamp ? 'pointer' : 'not-allowed',
+                                background: canAccept ? '#16a34a' : '#d1d5db',
+                                color: canAccept ? 'white' : '#6b7280',
+                                cursor: canAccept ? 'pointer' : 'not-allowed',
                                 border: 'none'
                             }}
-                            whileHover={isChecked ? { scale: 1.02 } : {}}
-                            whileTap={isChecked ? { scale: 0.98 } : {}}
+                            whileHover={canAccept ? { scale: 1.02 } : {}}
+                            whileTap={canAccept ? { scale: 0.98 } : {}}
                         >
                             I ACCEPT
                         </motion.button>
 
-                        <AnimatePresence>
-                            {!declineClicked ? (
-                                <motion.button
-                                    onClick={handleDecline}
-                                    className="flex-1 py-3 rounded font-bold border-2 border-gray-400 text-gray-600 hover:border-red-500 hover:text-red-500 transition-colors"
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.75rem',
-                                        borderRadius: '0.25rem',
-                                        fontWeight: 'bold',
-                                        border: '2px solid #9ca3af',
-                                        background: 'transparent',
-                                        color: '#4b5563',
-                                        cursor: 'pointer'
-                                    }}
-                                    exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    I DECLINE
-                                </motion.button>
-                            ) : (
-                                <motion.div
-                                    className="flex-1 py-3 text-center text-red-500 text-sm"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    style={{ flex: 1, padding: '0.75rem', textAlign: 'center', color: '#ef4444', fontSize: '0.875rem' }}
-                                >
-                                    This is not a valid option.
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        <motion.button
+                            onClick={handleDecline}
+                            className="flex-1 py-3 rounded font-bold border-2 border-gray-400 text-gray-600 hover:border-red-500 hover:text-red-500 transition-colors"
+                            style={{
+                                flex: 1,
+                                padding: '0.75rem',
+                                borderRadius: '0.25rem',
+                                fontWeight: 'bold',
+                                border: '2px solid #9ca3af',
+                                background: 'transparent',
+                                color: '#4b5563',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            I DECLINE
+                        </motion.button>
                     </div>
                 </div>
             </motion.div>

@@ -103,12 +103,13 @@ export default function Home() {
                       </button>
                     </div>
                   </div>
-                  {/* Window content - iframe to loop app */}
-                  <div className="flex-1 min-h-0 relative">
+                  {/* Window content - iframe fills window */}
+                  <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
                     <iframe
                       title="loop"
                       src="/loop/index.html"
-                      className="absolute inset-0 w-full h-full border-0 bg-white"
+                      className="absolute border-0 bg-black"
+                      style={{ width: '125%', height: '125%', transform: 'scale(0.8)' }}
                     />
                   </div>
                 </div>

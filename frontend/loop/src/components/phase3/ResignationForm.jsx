@@ -78,7 +78,7 @@ export function ResignationForm() {
 
     return (
         <motion.div
-            className={`w-full h-full flex items-center justify-center relative overflow-hidden transition-colors duration-1000 ${resistanceStage > 1 ? 'bg-red-950' : 'bg-neogen-bg'}`}
+            className={`w-full h-full flex items-center justify-center relative overflow-y-auto overflow-x-hidden transition-colors duration-1000 py-6 ${resistanceStage > 1 ? 'bg-red-950' : 'bg-neogen-bg'}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
         >
@@ -93,7 +93,7 @@ export function ResignationForm() {
             )}
 
             <motion.div
-                className={`${getBgColor()} text-black rounded-sm shadow-2xl w-[600px] relative z-20 border border-gray-400`}
+                className={`${getBgColor()} text-black rounded-sm shadow-2xl w-[min(600px,95vw)] max-h-[calc(100vh-3rem)] flex flex-col relative z-20 border border-gray-400 flex-shrink-0 my-auto`}
                 drag="x"
                 dragConstraints={{ left: -200, right: 100 * (3 - resistanceStage) }} // Limit right movement as stages progress
                 dragElastic={getElasticity()}
@@ -103,7 +103,7 @@ export function ResignationForm() {
                 style={{ touchAction: 'none' }}
             >
                 {/* Form Header */}
-                <div className="p-8 border-b-4 border-double border-black bg-gray-50">
+                <div className="p-6 sm:p-8 border-b-4 border-double border-black bg-gray-50 flex-shrink-0">
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <h1 className="text-xl font-bold font-mono tracking-wider">NEOGEN CORPORATION</h1>
@@ -115,8 +115,8 @@ export function ResignationForm() {
                     </div>
                 </div>
 
-                {/* Form Body */}
-                <div className="p-8 font-mono text-sm space-y-6">
+                {/* Form Body - scrollable if content overflows */}
+                <div className="p-6 sm:p-8 font-mono text-sm space-y-6 overflow-y-auto flex-1 min-h-0">
                     <div className="grid grid-cols-2 gap-4 border-b border-black pb-6">
                         <div>
                             <span className="block text-gray-500 text-xs mb-1">Employee ID</span>
@@ -170,7 +170,7 @@ export function ResignationForm() {
                 </div>
 
                 {/* Footer / Drag Actions */}
-                <div className="bg-gray-200 p-4 border-t border-gray-400 flex justify-between items-center font-bold text-gray-500">
+                <div className="bg-gray-200 p-4 border-t border-gray-400 flex justify-between items-center font-bold text-gray-500 flex-shrink-0">
                     <span className="flex items-center gap-2">← [STAY]</span>
                     <span className="flex items-center gap-2">[RESIGN] →</span>
                 </div>

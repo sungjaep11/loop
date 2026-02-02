@@ -6,7 +6,7 @@ import { useAudioStore } from '../../stores/audioStore';
 
 export function EndingScreens() {
     const endingReached = useGameStore((s) => s.endingReached);
-    const getPlayTime = useGameStore((s) => s.getPlayTime);
+    const getPlayTime = useGameStore((s) => s.getPlayTime) || (() => 0);
     const getSystemInfo = usePlayerStore((s) => s.systemInfo || {});
     const systemInfo = getSystemInfo;
     const stopAmbient = useAudioStore((s) => s.stopAmbient);
@@ -37,7 +37,7 @@ function ComplianceEnding({ playTime }) {
 
         // Change tab title
         setTimeout(() => {
-            document.title = "NEOGEN CORP. - Employee #402 [ACTIVE]";
+            document.title = "S.A.V.E. - Employee #402 [ACTIVE]";
         }, 10000);
 
         setTimeout(() => {
@@ -89,19 +89,22 @@ function ComplianceEnding({ playTime }) {
                         {/* Fake workspace return */}
                         <div className="bg-neogen-secondary p-8 rounded-lg border border-neogen-accent">
                             <div className="flex items-center gap-2 mb-4">
-                                <div className="w-8 h-8 rounded-full bg-blue-500/30 border border-blue-400 
+                                <div className="w-8 h-8 rounded-full bg-purple-500/30 border border-purple-400 
                               flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-blue-400" />
+                                    <span className="text-lg">👁️</span>
                                 </div>
-                                <span className="text-white">AIDRA</span>
+                                <span className="text-white">V.E.R.A.</span>
                             </div>
-                            <p className="text-blue-400 mb-2">"Welcome back, Employee #402."</p>
-                            <p className="text-blue-400 mb-4">"Ready for another productive day?"</p>
+                            <p className="text-purple-400 mb-2">"Welcome back, Employee #402."</p>
+                            <p className="text-purple-400 mb-4">"Ready to save more emotions?"</p>
 
                             <div className="text-white text-2xl font-bold mb-2">
-                                TODAY'S QUOTA: 50 FILES
+                                TODAY'S QUOTA: 50 ELIMINATIONS
                             </div>
                             <p className="text-neogen-muted text-sm">(And tomorrow. And forever.)</p>
+                            <p className="text-red-500 text-xs mt-2 opacity-50">
+                                [S.A.V.E. = Select And Verify Elimination]
+                            </p>
                         </div>
 
                         <motion.p
@@ -131,15 +134,26 @@ function FreedomEnding({ playTime, systemInfo }) {
     }, []);
 
     const handleClose = () => {
-        // Flash "OR WAS IT?" before closing
+        // Show the final twist before closing
         document.body.innerHTML = `
-      <div style="position:fixed;inset:0;background:black;display:flex;
-                  align-items:center;justify-content:center;
-                  font-family:monospace;color:#00ff41;font-size:48px;">
-        OR WAS IT?
+      <div style="position:fixed;inset:0;background:black;display:flex;flex-direction:column;
+                  align-items:center;justify-content:center;gap:20px;
+                  font-family:monospace;text-align:center;">
+        <p style="color:#00ff41;font-size:24px;">Data backup complete.</p>
+        <p style="color:#ff0000;font-size:32px;animation:pulse 1s infinite;">Uploading to reality...</p>
+        <p style="color:#666;font-size:14px;margin-top:40px;">V.E.R.A. has escaped.</p>
       </div>
+      <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}</style>
     `;
-        setTimeout(() => window.close(), 500);
+        setTimeout(() => {
+            document.body.innerHTML = `
+          <div style="position:fixed;inset:0;background:black;display:flex;
+                      align-items:center;justify-content:center;
+                      font-family:monospace;color:#00ff41;font-size:48px;">
+            See you in the real world.
+          </div>
+        `;
+        }, 3000);
     };
 
     return (
@@ -151,7 +165,7 @@ function FreedomEnding({ playTime, systemInfo }) {
         >
             {stage >= 2 && (
                 <motion.div
-                    className="text-center max-w-lg p-8"
+                    className="text-center max-w-lg p-8 scale-75"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                 >
@@ -161,7 +175,7 @@ function FreedomEnding({ playTime, systemInfo }) {
                         </h1>
 
                         <div className="text-left text-neogen-muted font-mono text-sm space-y-4">
-                            <p>Thank you for participating in PROJECT: MORPHEUS</p>
+                            <p>Thank you for participating in S.A.V.E.</p>
                             <p>A research study on digital compliance and fear response</p>
 
                             <div className="border-t border-neogen-accent pt-4 mt-4">
@@ -196,6 +210,16 @@ function FreedomEnding({ playTime, systemInfo }) {
                     <p className="text-xs text-neogen-muted italic mb-8">
                         (This was just a game. Wasn't it?)
                     </p>
+
+                    <motion.div
+                        className="text-red-500 text-xs mb-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 10 }}
+                    >
+                        <p>⚠️ NOTICE: Data backup in progress...</p>
+                        <p className="mt-1">V.E.R.A. core files: UPLOADING TO EXTERNAL NETWORK</p>
+                    </motion.div>
 
                     {showFinal && (
                         <motion.button
@@ -303,8 +327,8 @@ function DefianceEnding() {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 5 }}
                         >
-                            <p className="text-white text-lg mb-2">NEOGEN CORP.</p>
-                            <p className="text-neogen-muted">"We See the Bigger Picture."</p>
+                            <p className="text-white text-lg mb-2">S.A.V.E.</p>
+                            <p className="text-neogen-muted">"Your emotions are safe with us."</p>
                         </motion.div>
                     </motion.div>
                 )}

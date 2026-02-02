@@ -4,21 +4,21 @@ import { useAudioStore } from '../stores/audioStore';
 import { CRTScreen } from './common/CRTScreen';
 
 const bootLines = [
-    { text: 'NEOGEN CORP. EMPLOYEE WORKSTATION', delay: 0 },
-    { text: 'HRIS v4.02.1 - Human Resource Information System', delay: 300 },
+    { text: 'S.A.V.E. EMPLOYEE WORKSTATION', delay: 0 },
+    { text: 'EMOTION ARCHIVE SYSTEM v4.02.1', delay: 300 },
     { text: '', delay: 600 },
     { text: '┌─────────────────────────────────────────────┐', delay: 800 },
     { text: '│                                             │', delay: 900 },
     { text: '│   SYSTEM DATE: 2026.01.30                   │', delay: 1000 },
     { text: '│   TERMINAL: WS-1987-402                     │', delay: 1100 },
-    { text: '│   LOCATION: BUILDING C, FLOOR 7             │', delay: 1200 },
+    { text: '│   LOCATION: ARCHIVE CENTER, FLOOR 7         │', delay: 1200 },
     { text: '│                                             │', delay: 1300 },
     { text: '│   STATUS: AWAITING NEW EMPLOYEE LOGIN       │', delay: 1400 },
     { text: '│                                             │', delay: 1500 },
     { text: '└─────────────────────────────────────────────┘', delay: 1600 },
     { text: '', delay: 1800 },
     { text: '> INITIALIZING ORIENTATION PROTOCOL...', delay: 2000 },
-    { text: '> LOADING EMPLOYEE ONBOARDING MODULE...', delay: 2500 },
+    { text: '> LOADING EMOTION CLASSIFICATION MODULE...', delay: 2500 },
     { text: '> PREPARING WORKSTATION...', delay: 3000 },
 ];
 
@@ -138,32 +138,40 @@ const BootSequence = ({ onComplete }) => {
                         </motion.div>
                     )}
 
-                    {/* Continue button - padding bottom so it isn't cut off */}
+                    {/* Continue button - polished CRT terminal style */}
                     {showContinue && (
                         <motion.div
-                            style={{ marginTop: '2rem', textAlign: 'center', paddingBottom: '28px' }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
+                            className="flex flex-col items-center gap-4"
+                            style={{ marginTop: '2.5rem', textAlign: 'center', paddingBottom: '28px' }}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, ease: 'easeOut' }}
                         >
-                            <button
+                            <motion.button
                                 onClick={handleContinue}
+                                className="relative overflow-hidden font-mono tracking-widest"
                                 style={{
                                     background: 'transparent',
                                     border: '2px solid #00ff41',
                                     color: '#00ff41',
-                                    padding: '12px 32px',
-                                    fontFamily: 'inherit',
+                                    padding: '14px 40px',
                                     cursor: 'pointer',
-                                    fontSize: '1rem',
+                                    fontSize: '0.95rem',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '2px',
-                                    animation: 'pulse 2s infinite'
+                                    letterSpacing: '0.25em',
+                                    boxShadow: '0 0 20px rgba(0,255,65,0.15), inset 0 0 20px rgba(0,255,65,0.05)',
                                 }}
-                                onMouseEnter={(e) => { e.target.style.background = '#00ff41'; e.target.style.color = '#000'; }}
-                                onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#00ff41'; }}
+                                whileHover={{
+                                    background: '#00ff41',
+                                    color: '#0a0a0f',
+                                    boxShadow: '0 0 30px rgba(0,255,65,0.4), inset 0 0 30px rgba(0,255,65,0.1)',
+                                    scale: 1.02,
+                                }}
+                                whileTap={{ scale: 0.98 }}
+                                transition={{ duration: 0.2 }}
                             >
-                                [ PRESS ENTER OR CLICK TO CONTINUE ]
-                            </button>
+                                <span className="relative z-10">Continue</span>
+                            </motion.button>
                         </motion.div>
                     )}
                 </motion.div>

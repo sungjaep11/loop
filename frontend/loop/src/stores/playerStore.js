@@ -15,6 +15,9 @@ export const usePlayerStore = create((set, get) => ({
     webcamStream: null,
     webcamError: null,
 
+    // Captured photo for Employee ID (from IdentityVerification)
+    capturedPhoto: null,
+
     // Mouse Tracking
     lastMousePosition: { x: 0, y: 0 },
     mouseVelocity: 0,
@@ -25,6 +28,7 @@ export const usePlayerStore = create((set, get) => ({
 
     setWebcamStream: (stream) => set({ webcamStream: stream }),
     setWebcamError: (error) => set({ webcamError: error }),
+    setCapturedPhoto: (dataUrl) => set({ capturedPhoto: dataUrl }),
 
     updateMousePosition: (x, y) => {
         const { lastMousePosition } = get();

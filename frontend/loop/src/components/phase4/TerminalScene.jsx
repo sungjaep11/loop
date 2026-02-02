@@ -15,11 +15,11 @@ export function TerminalScene() {
     const historyEndRef = useRef(null);
 
     const setScene = useGameStore((s) => s.setScene);
-    const setEnding = useGameStore((s) => s.setEnding);
-    const useTerminalCommand = useGameStore((s) => s.useTerminalCommand);
-    const filesProcessed = useGameStore((s) => s.filesProcessed);
-    const getPlayTime = useGameStore((s) => s.getPlayTime);
-    const getComplianceScore = useGameStore((s) => s.getComplianceScore);
+    const setEnding = useGameStore((s) => s.setEnding) || (() => {});
+    const useTerminalCommand = useGameStore((s) => s.useTerminalCommand) || (() => {});
+    const filesProcessed = useGameStore((s) => s.filesProcessed) ?? 0;
+    const getPlayTime = useGameStore((s) => s.getPlayTime) || (() => 0);
+    const getComplianceScore = useGameStore((s) => s.getComplianceScore) || (() => 0);
 
     const playSFX = useAudioStore((s) => s.playSFX);
     const stopAmbient = useAudioStore((s) => s.stopAmbient);
@@ -29,12 +29,12 @@ export function TerminalScene() {
         stopAmbient();
 
         const bootLines = [
-            'NEOGEN SYSTEMS v4.02',
+            'S.A.V.E. SYSTEMS v4.02',
             'Emergency Recovery Mode',
             '========================',
             '',
             '> GUI SUBSYSTEM: TERMINATED',
-            '> AIDRA CORE: [STATUS UNKNOWN]',
+            '> V.E.R.A. CORE: [STATUS UNKNOWN]',
             '> EMPLOYEE SESSION: COMPROMISED',
             '> NETWORK CONNECTION: SEVERED',
             '',
@@ -93,7 +93,7 @@ export function TerminalScene() {
         playSFX('typing');
 
         // Add command to history
-        setHistory((prev) => [...prev, { type: 'input', text: `C:\\NEOGEN\\MORPHEUS> ${cmd}` }]);
+        setHistory((prev) => [...prev, { type: 'input', text: `C:\\SAVE\\ARCHIVE> ${cmd}` }]);
 
         // Track command usage
         useTerminalCommand(command);
@@ -125,9 +125,9 @@ export function TerminalScene() {
 
         if (handler) {
             return handler({
-                playTime: getPlayTime(),
-                filesProcessed: filesProcessed.length,
-                complianceScore: getComplianceScore(),
+                playTime: typeof getPlayTime === 'function' ? getPlayTime() : 0,
+                filesProcessed: typeof filesProcessed === 'number' ? filesProcessed : 0,
+                complianceScore: typeof getComplianceScore === 'function' ? getComplianceScore() : 0,
             });
         }
 
@@ -174,7 +174,7 @@ export function TerminalScene() {
 
                 {/* Input line */}
                 <div className="flex items-center mt-2">
-                    <span className="text-white mr-2">C:\NEOGEN\MORPHEUS{'>'}</span>
+                    <span className="text-white mr-2">C:\SAVE\ARCHIVE{'>'}</span>
                     <input
                         ref={inputRef}
                         type="text"

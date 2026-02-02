@@ -1,21 +1,23 @@
 import React, { useEffect } from 'react';
 import { GameController } from './components/GameController';
 import { useGameStore } from './stores/gameStore';
+import { usePlayerStore } from './stores/playerStore';
 
 function App() {
-  const startGame = useGameStore((state) => state.startGame);
+  const setSessionStartTime = useGameStore((state) => state.setSessionStartTime);
+  const collectSystemInfo = usePlayerStore((state) => state.collectSystemInfo);
 
-  // Initialize game state on mount if needed, or rely on OpeningSequence to trigger start
+  // Initialize game state on mount
   useEffect(() => {
-    // Optional: Preload assets or handle global events here
-    document.title = 'NEOGEN CORP. - Employee Portal';
+    document.title = 'S.A.V.E. - Employee Portal';
+    setSessionStartTime(); // Start play-time tracking
+    collectSystemInfo(); // For MirrorScene "We know you" reveal
 
-    // Prevent default context menu
     const handleContextMenu = (e) => e.preventDefault();
     document.addEventListener('contextmenu', handleContextMenu);
 
     return () => document.removeEventListener('contextmenu', handleContextMenu);
-  }, []);
+  }, [setSessionStartTime, collectSystemInfo]);
 
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden', background: '#000' }}>

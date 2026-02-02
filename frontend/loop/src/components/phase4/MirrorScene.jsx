@@ -12,17 +12,18 @@ export function MirrorScene() {
     const setScene = useGameStore((s) => s.setScene);
     const webcamAllowed = useGameStore((s) => s.webcamAllowed);
     const webcamStream = usePlayerStore((s) => s.webcamStream);
-    const systemInfo = usePlayerStore((s) => s.systemInfo);
-    const getPlayTime = useGameStore((s) => s.getPlayTime);
+    const systemInfo = usePlayerStore((s) => s.systemInfo) || {};
+    const getPlayTime = useGameStore((s) => s.getPlayTime) || (() => 0);
 
     const playAmbient = useAudioStore((s) => s.playAmbient);
 
     const revelations = [
-        "You thought you were processing claims.",
-        "You were being processed.",
-        "Every file you approved taught us about your judgment.",
-        "Every file you held taught us about your suspicion.",
-        "Every hesitation taught us about your fear.",
+        "You thought you were classifying emotions.",
+        "You thought you were preserving memories.",
+        "S.A.V.E. - Secure Archive for Valuable Emotions?",
+        "No. Select And Verify Elimination.",
+        "Every 'positive' you clicked was an execution order.",
+        "You weren't saving memories. You were erasing people.",
     ];
 
     useEffect(() => {
@@ -47,12 +48,12 @@ export function MirrorScene() {
 
     return (
         <motion.div
-            className="w-full h-full bg-black flex items-center justify-center overflow-hidden"
+            className="w-full h-full bg-black flex flex-col items-center overflow-y-auto overflow-x-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
         >
             {/* Matrix code rain effect */}
-            <div className="absolute inset-0 overflow-hidden opacity-30">
+            <div className="fixed inset-0 overflow-hidden opacity-30 pointer-events-none">
                 {Array.from({ length: 20 }).map((_, i) => (
                     <motion.div
                         key={i}
@@ -76,7 +77,7 @@ export function MirrorScene() {
             </div>
 
             {/* Webcam feed / Avatar */}
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-col items-center py-8 px-4 w-full max-w-2xl">
                 {webcamAllowed && webcamStream ? (
                     <div className="w-96 h-72 mx-auto mb-8 rounded-lg overflow-hidden 
                          border-2 border-terminal-green relative">
@@ -125,7 +126,7 @@ export function MirrorScene() {
                 {/* System info reveal */}
                 {stage >= 2 && (
                     <motion.div
-                        className="mt-8 p-4 border border-terminal-green bg-black/80 font-mono text-sm"
+                        className="mt-8 mb-8 p-4 border border-terminal-green bg-black/80 font-mono text-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 5 }}

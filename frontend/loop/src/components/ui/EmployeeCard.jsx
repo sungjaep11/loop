@@ -1,19 +1,40 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { usePlayerStore } from '../../stores/playerStore';
 
 export function EmployeeCard() {
+    const capturedPhoto = usePlayerStore((s) => s.capturedPhoto);
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setVisible(false), 5000);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
+        <AnimatePresence>
+            {visible && (
         <motion.div
             className="fixed top-8 right-8 z-50 pointer-events-none"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.5 }}
         >
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-3 w-64 shadow-2xl flex gap-3 text-white">
-                <div className="w-16 h-20 bg-gray-800 rounded overflow-hidden relative">
-                    {/* Silhouette */}
-                    <div className="absolute inset-0 bg-gray-700 flex items-center justify-center text-3xl">👤</div>
-                    <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="w-16 h-20 bg-gray-800 rounded overflow-hidden relative flex-shrink-0">
+                    {capturedPhoto ? (
+                        <img
+                            src={capturedPhoto}
+                            alt="Employee"
+                            className="w-full h-full object-cover grayscale contrast-110"
+                        />
+                    ) : (
+                        <>
+                            <div className="absolute inset-0 bg-gray-700 flex items-center justify-center text-3xl">👤</div>
+                            <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        </>
+                    )}
                 </div>
 
                 <div className="flex-1 flex flex-col justify-center">
@@ -29,5 +50,7 @@ export function EmployeeCard() {
             {/* Connector lines decoration */}
             <div className="absolute -top-4 right-10 w-[1px] h-4 bg-white/20"></div>
         </motion.div>
+            )}
+        </AnimatePresence>
     );
 }

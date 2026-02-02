@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { usePlayerStore } from '../stores/playerStore';
 
 const IdentityVerification = ({ onComplete }) => {
+    const setCapturedPhoto = usePlayerStore((s) => s.setCapturedPhoto);
     const [status, setStatus] = useState('initializing'); // initializing, requesting, capturing, complete
     const [error, setError] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
@@ -84,6 +86,7 @@ const IdentityVerification = ({ onComplete }) => {
 
                 const dataUrl = canvas.toDataURL('image/png');
                 setCapturedImage(dataUrl);
+                setCapturedPhoto(dataUrl);
 
                 // Stop stream
                 stream.getTracks().forEach(track => track.stop());
@@ -101,15 +104,16 @@ const IdentityVerification = ({ onComplete }) => {
     }, []);
 
     return (
-        <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 5
-        }}>
+        <div className="w-full h-full relative bg-[#0a0a0f]">
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 5
+            }}>
             {/* Hidden Video/Canvas for capture logic */}
             <video ref={videoRef} style={{ display: 'none' }} playsInline muted />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
@@ -132,8 +136,21 @@ const IdentityVerification = ({ onComplete }) => {
 
             {/* Error State */}
             {status === 'error' && (
-                <div className="glass-panel" style={{ padding: '24px', color: 'red' }}>
-                    {error}
+                <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                    <span style={{ color: 'red' }}>{error}</span>
+                    <button
+                        onClick={() => onComplete?.()}
+                        style={{
+                            padding: '8px 24px',
+                            background: '#333',
+                            color: '#fff',
+                            border: '1px solid #555',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                        }}
+                    >
+                        Continue without photo
+                    </button>
                 </div>
             )}
 
@@ -171,7 +188,7 @@ const IdentityVerification = ({ onComplete }) => {
                         <style>{`@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.1em' }}>NEOGEN CORP</span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.1em' }}>S.A.V.E.</span>
                             <div style={{ width: '8px', height: '8px', background: '#0f0', borderRadius: '50%', boxShadow: '0 0 8px #0f0' }}></div>
                         </div>
 
@@ -203,6 +220,7 @@ const IdentityVerification = ({ onComplete }) => {
                     </div>
                 </>
             )}
+            </div>
         </div>
     );
 };

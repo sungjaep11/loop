@@ -56,7 +56,7 @@ const OpeningSequence = ({ onComplete }) => {
             style={{ fontFamily: "'Space Mono', monospace", color: '#00ff41', textAlign: 'center' }}
           >
             <TypewriterText
-              text="NEOGEN CORP. EMPLOYEE ORIENTATION SYSTEM v4.02"
+              text="S.A.V.E. EMPLOYEE ORIENTATION SYSTEM v4.02"
               speed={30}
               onComplete={() => playSFX('type')}
               className="text-sm mb-2"
@@ -96,7 +96,7 @@ const OpeningSequence = ({ onComplete }) => {
             style={{ textAlign: 'center' }}
           >
             <GlitchText
-              text="PROJECT: MORPHEUS"
+              text="S.A.V.E."
               className="text-6xl md:text-8xl font-display font-bold text-white tracking-wider"
               intensity={stage === 2 ? 'high' : 'low'}
               style={{ fontSize: '3rem', color: 'white', fontWeight: 'bold', fontFamily: "'Arial', sans-serif", letterSpacing: '0.5em' }}
@@ -109,7 +109,7 @@ const OpeningSequence = ({ onComplete }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                "You are not playing. You are being played."
+                "Secure Archive for Valuable Emotions"
               </motion.p>
             )}
           </motion.div>

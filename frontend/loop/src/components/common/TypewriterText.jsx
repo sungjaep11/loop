@@ -4,11 +4,14 @@ export const TypewriterText = ({ text, speed = 50, delay = 0, className = '', on
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  // Ensure text is a string to avoid "undefined" appearing
+  const safeText = typeof text === 'string' ? text : '';
+
   useEffect(() => {
     let timeout;
     let interval;
 
-    if (text) {
+    if (safeText) {
       setDisplayedText('');
 
       timeout = setTimeout(() => {
@@ -16,8 +19,9 @@ export const TypewriterText = ({ text, speed = 50, delay = 0, className = '', on
         let currentIndex = 0;
 
         interval = setInterval(() => {
-          if (currentIndex < text.length) {
-            setDisplayedText(prev => prev + text[currentIndex]);
+          if (currentIndex < safeText.length) {
+            const char = safeText[currentIndex];
+            setDisplayedText(prev => prev + (char ?? ''));
             currentIndex++;
           } else {
             clearInterval(interval);
@@ -32,7 +36,7 @@ export const TypewriterText = ({ text, speed = 50, delay = 0, className = '', on
       clearTimeout(timeout);
       clearInterval(interval);
     };
-  }, [text, speed, delay, onComplete]);
+  }, [safeText, speed, delay, onComplete]);
 
   return (
     <span className={className}>

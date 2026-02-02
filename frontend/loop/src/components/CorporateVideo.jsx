@@ -5,45 +5,56 @@ const videoScenes = [
     {
         id: 1,
         duration: 4000,
-        text: 'Welcome to NEOGEN Corporation.',
-        subtext: "For over three decades, we've been at the forefront of healthcare data management.",
-        visual: 'office',
+        text: 'WELCOME TO S.A.V.E.',
+        subtext: 'Secure Archive for Valuable Emotions',
+        subtext2: 'We preserve humanity\'s most precious memories.',
+        visual: 'archive',
+        accent: 'terminal',
     },
     {
         id: 2,
         duration: 4000,
-        text: "Here at NEOGEN, you're not just an employee.",
-        subtext: "You're family. A family of over 12,000 dedicated professionals worldwide.",
-        visual: 'employees',
+        text: 'YOU ARE NOT JUST AN EMPLOYEE.',
+        subtext: 'You are a guardian of human emotions.',
+        subtext2: 'A curator of precious memories.',
+        visual: 'guardian',
+        accent: 'terminal',
     },
     {
         id: 3,
         duration: 5000,
-        text: 'Your role as a Medical Claims Data Specialist is vital.',
-        subtext: 'Every file you process represents a real person. A patient waiting for care.',
-        visual: 'paperwork',
+        text: 'EMOTION CLASSIFICATION SPECIALIST',
+        subtext: 'Your role is vital to the Archive.',
+        subtext2: 'Every classification helps preserve the beauty of human experience.',
+        visual: 'classify',
+        accent: 'terminal',
     },
     {
         id: 4,
         duration: 4000,
-        text: "You won't be working alone.",
-        subtext: 'Meet AIDRA - your Automated Intelligence for Data Review and Analysis.',
-        visual: 'aidra',
+        text: 'YOU WILL NOT WORK ALONE.',
+        subtext: 'Meet V.E.R.A.',
+        subtext2: 'Virtual Emotion Recognition Assistant.',
+        visual: 'vera',
+        accent: 'purple',
     },
     {
         id: 5,
         duration: 500,
         text: '',
         subtext: '',
+        subtext2: '',
         visual: 'glitch',
         isGlitch: true,
     },
     {
         id: 6,
         duration: 4000,
-        text: 'Remember: At NEOGEN, we see the bigger picture.',
-        subtext: 'And now... so will you.',
-        visual: 'ceo',
+        text: 'AT S.A.V.E., WE PROTECT WHAT MATTERS MOST.',
+        subtext: 'Your emotions... are safe with us.',
+        subtext2: '',
+        visual: 'safe',
+        accent: 'terminal',
     },
 ];
 
@@ -56,120 +67,152 @@ const CorporateVideo = ({ onComplete }) => {
 
         videoScenes.forEach((scene, index) => {
             if (index > 0) {
-                setTimeout(() => {
-                    setCurrentSceneIndex(index);
-                }, totalDelay);
+                setTimeout(() => setCurrentSceneIndex(index), totalDelay);
             }
             totalDelay += scene.duration;
         });
 
-        // End video
-        setTimeout(() => {
-            setIsEnding(true);
-        }, totalDelay);
-
-        setTimeout(() => {
-            onComplete();
-        }, totalDelay + 3000);
+        setTimeout(() => setIsEnding(true), totalDelay);
+        setTimeout(() => onComplete(), totalDelay + 3000);
     }, [onComplete]);
 
     const currentScene = videoScenes[currentSceneIndex];
+    const isPurpleAccent = currentScene?.accent === 'purple';
 
     return (
-        <div style={{
-            position: 'absolute', inset: 0,
-            background: '#000',
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            padding: '20px'
-        }}>
-            {/* VHS Effect Container */}
-            <div style={{
-                position: 'relative',
-                width: '100%', maxWidth: '800px',
-                aspectRatio: '4/3',
-                background: '#16213e',
-                border: '4px solid #333',
-                overflow: 'hidden',
-                boxShadow: '0 0 50px rgba(0,0,0,0.5)'
-            }}>
+        <div className="absolute inset-0 flex items-center justify-center p-4 bg-black overflow-hidden">
+            {/* CRT monitor frame */}
+            <div
+                className="relative w-full max-w-4xl"
+                style={{
+                    background: 'linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%)',
+                    border: '4px solid #2a2a2a',
+                    borderRadius: '8px',
+                    boxShadow: `
+                        inset 0 0 60px rgba(0,0,0,0.8),
+                        0 0 0 2px #333,
+                        0 20px 60px rgba(0,0,0,0.9)
+                    `,
+                }}
+            >
+                {/* Screen bezel */}
+                <div
+                    className="relative m-3 rounded overflow-hidden"
+                    style={{
+                        aspectRatio: '16/10',
+                        background: '#050508',
+                        border: '1px solid #1a1a1a',
+                    }}
+                >
+                    <AnimatePresence mode="wait">
+                        {!isEnding ? (
+                            <motion.div
+                                key={currentScene.id}
+                                className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12"
+                                style={{
+                                    background: currentScene?.isGlitch
+                                        ? 'linear-gradient(135deg, #1a0505 0%, #0a0000 100%)'
+                                        : 'linear-gradient(180deg, #0a0a0f 0%, #050508 50%, #0a0a0f 100%)',
+                                }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.4 }}
+                            >
+                                {/* Top status bar */}
+                                <div className="absolute top-0 left-0 right-0 h-8 flex items-center justify-between px-4 border-b border-[#00ff4122] bg-black/60 font-mono text-[10px] text-[#00ff4188]">
+                                    <span>S.A.V.E. CORPORATE ORIENTATION v4.02</span>
+                                    <span>REC {String(currentSceneIndex + 1).padStart(2, '0')}/{videoScenes.length}</span>
+                                </div>
 
-                {/* Scanlines */}
-                <div style={{
-                    position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
-                    background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)'
-                }}></div>
+                                {!currentScene?.isGlitch && (
+                                    <motion.div
+                                        className="text-center max-w-2xl"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                    >
+                                        <h2
+                                            className="text-lg md:text-xl font-mono font-bold mb-4 tracking-[0.2em] uppercase"
+                                            style={{
+                                                color: isPurpleAccent ? '#a855f7' : '#00ff41',
+                                                textShadow: isPurpleAccent ? '0 0 20px rgba(168,85,247,0.5)' : '0 0 20px rgba(0,255,65,0.3)',
+                                            }}
+                                        >
+                                            {currentScene.text}
+                                        </h2>
+                                        <p
+                                            className="text-sm md:text-base font-mono mb-1"
+                                            style={{ color: 'rgba(0,255,65,0.9)' }}
+                                        >
+                                            {currentScene.subtext}
+                                        </p>
+                                        {currentScene.subtext2 && (
+                                            <p
+                                                className="text-xs md:text-sm font-mono"
+                                                style={{ color: 'rgba(0,255,65,0.6)' }}
+                                            >
+                                                {currentScene.subtext2}
+                                            </p>
+                                        )}
+                                    </motion.div>
+                                )}
 
-                <AnimatePresence mode="wait">
-                    {!isEnding ? (
-                        <motion.div
-                            key={currentScene.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.5 }}
-                            style={{
-                                width: '100%', height: '100%',
-                                display: 'flex', flexDirection: 'column',
-                                alignItems: 'center', justifyContent: 'center',
-                                background: currentScene.isGlitch ? '#300' : '#1a1a2e',
-                                position: 'relative',
-                                padding: '40px',
-                                color: '#eee',
-                                textAlign: 'center'
-                            }}
-                        >
-                            {/* Visual Placeholder */}
-                            <div style={{ fontSize: '5rem', marginBottom: '2rem' }}>
-                                {currentScene.visual === 'office' && '🏢'}
-                                {currentScene.visual === 'employees' && '👥'}
-                                {currentScene.visual === 'paperwork' && '📄'}
-                                {currentScene.visual === 'aidra' && '👁️'}
-                                {currentScene.visual === 'glitch' && '⚠️'}
-                                {currentScene.visual === 'ceo' && '👤'}
-                            </div>
+                                {/* Bottom scan line effect */}
+                                <div
+                                    className="absolute bottom-0 left-0 right-0 h-px opacity-30"
+                                    style={{ background: 'linear-gradient(90deg, transparent, #00ff41, transparent)' }}
+                                />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="ending"
+                                className="absolute inset-0 flex flex-col items-center justify-center bg-black"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.8 }}
+                            >
+                                <div className="font-mono text-[#00ff41] text-center">
+                                    <p className="text-sm tracking-[0.3em] mb-2">— END OF TRANSMISSION —</p>
+                                    <p className="text-xs text-[#00ff4166] tracking-[0.2em]">PROCEEDING TO CONTRACT...</p>
+                                </div>
+                                <motion.div
+                                    className="mt-8 h-px bg-[#00ff4144] rounded-full"
+                                    style={{ width: '200px', transformOrigin: 'center' }}
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{ delay: 0.5, duration: 1.5 }}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                            {!currentScene.isGlitch && (
-                                <>
-                                    <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', fontFamily: "'Arial', sans-serif", fontWeight: 'bold' }}>
-                                        {currentScene.text}
-                                    </h2>
-                                    <p style={{ fontSize: '1rem', color: '#aaa', maxWidth: '600px', lineHeight: '1.5' }}>
-                                        {currentScene.subtext}
-                                    </p>
-                                </>
-                            )}
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="ending"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            style={{
-                                width: '100%', height: '100%',
-                                display: 'flex', flexDirection: 'column',
-                                alignItems: 'center', justifyContent: 'center',
-                                background: '#000',
-                                color: '#fff',
-                                fontFamily: "'Space Mono', monospace"
-                            }}
-                        >
-                            <div>END OF TAPE.</div>
-                            <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '10px' }}>PROCEEDING TO CONTRACT...</div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* VHS OSD */}
-                <div style={{
-                    position: 'absolute', top: '20px', left: '20px',
-                    fontFamily: "'Courier New', monospace",
-                    color: '#fff',
-                    fontSize: '1.2rem',
-                    textShadow: '2px 2px 0 #000',
-                    zIndex: 20
-                }}>
-                    PLAY ▶
+                    {/* CRT scanlines */}
+                    <div
+                        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+                        style={{
+                            background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(0,0,0,0.3) 1px, rgba(0,0,0,0.3) 2px)',
+                        }}
+                    />
                 </div>
+
+                {/* Progress indicator - terminal style */}
+                {!isEnding && (
+                    <div className="flex items-center gap-2 px-4 py-2 border-t border-[#333] font-mono text-[10px] text-[#00ff4166]">
+                        <span>LOADING:</span>
+                        <div className="flex-1 h-1 bg-[#1a1a1a] rounded overflow-hidden">
+                            <motion.div
+                                className="h-full bg-[#00ff4166]"
+                                initial={{ width: 0 }}
+                                animate={{
+                                    width: `${((currentSceneIndex + 1) / videoScenes.length) * 100}%`,
+                                }}
+                                transition={{ duration: 0.5 }}
+                            />
+                        </div>
+                        <span>{currentSceneIndex + 1}/{videoScenes.length}</span>
+                    </div>
+                )}
             </div>
         </div>
     );
