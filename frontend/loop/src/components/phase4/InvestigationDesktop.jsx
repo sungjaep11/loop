@@ -451,7 +451,6 @@ function Taskbar({ windows, activeWindow, onWindowClick, onStartClick, time }) {
 
             <div className="px-4 py-2 bg-[#0b286b] text-white text-xs font-medium border-l border-[#2764c9] h-full flex items-center">
                 {time}
-                <span className="ml-2 cursor-pointer text-blue-300 hover:text-white" onClick={onStartClick} title="Clipboard">📋</span>
             </div>
         </div>
     );

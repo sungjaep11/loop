@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MEMO_TEXT = 'The last piece was in my hand.';
@@ -9,6 +9,11 @@ export function MemoViewer({ unlocked = false }) {
     const [contextPos, setContextPos] = useState({ x: 0, y: 0 });
     const [pastedContent, setPastedContent] = useState(null);
 
+    const handlePaste = useCallback(() => {
+        setPastedContent(PASTED_PASSWORD);
+        setShowContextMenu(false);
+    }, []);
+
     const handleContextMenu = (e) => {
         e.preventDefault();
         if (!unlocked) return;
@@ -16,10 +21,17 @@ export function MemoViewer({ unlocked = false }) {
         setShowContextMenu(true);
     };
 
-    const handlePaste = () => {
-        setPastedContent(PASTED_PASSWORD);
-        setShowContextMenu(false);
-    };
+    useEffect(() => {
+        if (!unlocked) return;
+        const onKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                handlePaste();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [unlocked, handlePaste]);
 
     return (
         <div
