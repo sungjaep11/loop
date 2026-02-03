@@ -38,6 +38,9 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
     // Phase 3.1: Termination Option
     const [showTerminationOption, setShowTerminationOption] = useState(false);
 
+    // Phase 4: Elimination animation (when user drags own photo to eliminate)
+    const [isEliminating, setIsEliminating] = useState(false);
+
     const setScene = useGameStore((s) => s.setScene);
     const incrementProcessed = useGameStore((s) => s.incrementProcessed);
     const capturedPhoto = usePlayerStore((s) => s.capturedPhoto);
@@ -109,7 +112,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             setTimeout(() => {
                 setVeraMessage({
                     text: currentFile.veraMessage,
-                    duration: 6000,
+                    duration: 1000,
                     type: 'error'
                 });
             }, 3500);
@@ -176,7 +179,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
                 setVeraMessage({
                     text: file.veraMessage,
-                    duration: 5000,
+                    duration: 1000,
                     type: 'error'
                 });
 
@@ -195,7 +198,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
                     moveToNextFile();
                     setIsOverriding(false);
-                }, 5500);
+                }, 1500);
 
                 setActiveId(null);
                 return;
@@ -205,20 +208,21 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         // Normal processing (Phase 1 or correct Phase 2/3 choice)
         playSFX('success');
 
-        // Phase 4 - Eliminate button triggers glitch
+        // Phase 4 - Eliminate: play cool elimination sequence then transition
         if (isEliminateMode && action === 'negative') {
+            setActiveId(null);
+            setIsEliminating(true);
             setVeraMessage({
                 text: "ELIMINATION CONFIRMED. INITIATING PROTOCOL...",
-                duration: 3000,
+                duration: 1000,
                 type: 'error'
             });
+            playSFX('error');
 
             setTimeout(() => {
-                // Trigger Critical Error and transition
+                setIsEliminating(false);
                 onComplete();
-            }, 3500);
-
-            setActiveId(null);
+            }, 5000);
             return;
         }
 
@@ -290,7 +294,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 setTimeout(() => {
                     setVeraMessage({
                         text: "Final Phase. Data requiring special analysis detected.",
-                        duration: 4000,
+                        duration: 1000,
                         type: 'error'
                     });
                 }, 500);
@@ -398,6 +402,70 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {/* Elimination sequence overlay (drag own photo to eliminate) */}
+                        <AnimatePresence>
+                            {isEliminating && (
+                                <motion.div
+                                    className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-none overflow-hidden"
+                                    initial={{ opacity: 0 }}
+                                    animate={{
+                                        opacity: 1,
+                                        x: [0, -8, 6, -6, 4, 0, -3, 2, 0],
+                                        y: [0, 4, -6, 4, -2, 0, 2, -2, 0],
+                                    }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ opacity: { duration: 0.2 }, x: { duration: 1.2, times: [0, 0.1, 0.25, 0.4, 0.55, 0.7, 0.82, 0.92, 1] }, y: { duration: 1.2, times: [0, 0.1, 0.25, 0.4, 0.55, 0.7, 0.82, 0.92, 1] } }}
+                                >
+                                    {/* Red flash / vignette */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-red-900/80"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: [0, 0.9, 0.6, 0.85, 0.7, 0.9] }}
+                                        transition={{ duration: 1.5, times: [0, 0.15, 0.4, 0.6, 0.8, 1] }}
+                                    />
+                                    {/* Scan lines */}
+                                    <motion.div
+                                        className="absolute inset-0 opacity-40"
+                                        style={{
+                                            background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)',
+                                        }}
+                                        animate={{ y: [0, 8] }}
+                                        transition={{ duration: 0.12, repeat: Infinity }}
+                                    />
+                                    {/* Glitch text */}
+                                    <motion.div
+                                        className="relative text-center"
+                                        initial={{ scale: 0.5, opacity: 0 }}
+                                        animate={{
+                                            scale: [0.5, 1.2, 1],
+                                            opacity: [0, 1, 1],
+                                            x: [0, -4, 2, -2, 0],
+                                        }}
+                                        transition={{ duration: 1, times: [0, 0.25, 0.6, 0.75, 0.9, 1] }}
+                                    >
+                                        <p className="text-4xl md:text-5xl font-black text-white tracking-widest drop-shadow-lg" style={{ textShadow: '0 0 20px rgba(255,0,0,0.8)' }}>
+                                            ELIMINATION CONFIRMED
+                                        </p>
+                                        <motion.p
+                                            className="mt-4 text-xl font-mono text-red-200"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: [0, 1, 0.9, 0.8] }}
+                                            transition={{ delay: 0.6, duration: 0.8 }}
+                                        >
+                                            INITIATING PROTOCOL...
+                                        </motion.p>
+                                        <motion.div
+                                            className="mt-8 text-6xl"
+                                            animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
+                                            transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.4 }}
+                                        >
+                                            💀
+                                        </motion.div>
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </main>
 
                     <aside className="w-72 bg-gray-900/50 p-6 flex flex-col gap-6 border-l border-gray-800 backdrop-blur-sm relative">
@@ -421,26 +489,37 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
                     <DragOverlay>
                         {activeId && currentFile && (
-                            <div className={`w-80 p-4 rounded shadow-2xl opacity-80 rotate-3 cursor-grabbing ${isEliminateMode ? 'bg-red-900 text-white' : 'bg-white text-black'
-                                }`}>
-                                <p className="font-mono text-sm font-bold">
-                                    {currentFile.type === 'text' ? `"${currentFile.content}"` : currentFile.emoji || '📁'}
-                                </p>
-                            </div>
+                            isEliminateMode && currentFile.type === 'webcam' && webcamImage ? (
+                                <motion.div
+                                    className="w-80 p-2 rounded-xl shadow-2xl cursor-grabbing overflow-hidden border-4 border-red-500 bg-red-950/90"
+                                    animate={{
+                                        rotate: [0, -2, 2, 0],
+                                        scale: [1, 1.05, 1],
+                                        boxShadow: ['0 0 20px rgba(255,0,0,0.5)', '0 0 40px rgba(255,0,0,0.8)', '0 0 20px rgba(255,0,0,0.5)'],
+                                    }}
+                                    transition={{ duration: 0.8, repeat: Infinity }}
+                                >
+                                    <img
+                                        src={webcamImage}
+                                        alt="Subject"
+                                        className="w-full h-64 object-cover rounded-lg"
+                                    />
+                                    <p className="font-mono text-xs font-bold text-red-200 mt-2 text-center">SUBJECT #402 — DRAG TO ELIMINATE</p>
+                                </motion.div>
+                            ) : (
+                                <div className={`w-80 p-4 rounded shadow-2xl opacity-80 rotate-3 cursor-grabbing ${isEliminateMode ? 'bg-red-900 text-white' : 'bg-white text-black'
+                                    }`}>
+                                    <p className="font-mono text-sm font-bold">
+                                        {currentFile.type === 'text' ? `"${currentFile.content}"` : currentFile.emoji || '📁'}
+                                    </p>
+                                </div>
+                            )
                         )}
                     </DragOverlay>
                 </DndContext>
             </div>
 
             <EmployeeCard />
-            <footer className="bg-gray-900 px-4 py-1 text-[10px] text-gray-500 flex items-center justify-between border-t border-gray-800 z-10 font-mono">
-                <span>Terminal: WS-1987-402</span>
-                <span>Status: <span className={currentPhase >= 3 ? 'text-orange-500' : 'text-green-500'}>●</span> {
-                    mode === 'recovery' ? 'MONITORED' :
-                        currentPhase >= 3 ? 'ELEVATED MONITORING' :
-                            'SIGNAL STABLE'
-                }</span>
-            </footer>
         </motion.div>
     );
 }

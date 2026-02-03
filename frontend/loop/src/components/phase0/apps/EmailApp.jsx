@@ -2,9 +2,9 @@ import React from 'react';
 
 export function EmailApp({ onOpenLink }) {
     return (
-        <div className="flex flex-col h-full font-sans text-sm">
+        <div className="flex flex-col h-full min-h-0 font-sans text-sm">
             {/* Toolbar */}
-            <div className="bg-gray-100 border-b p-2 flex gap-4 text-gray-600">
+            <div className="flex-shrink-0 bg-gray-100 border-b p-2 flex gap-4 text-gray-600">
                 <button className="hover:bg-gray-200 px-2 rounded">Reply</button>
                 <button className="hover:bg-gray-200 px-2 rounded">Reply All</button>
                 <button className="hover:bg-gray-200 px-2 rounded">Forward</button>
@@ -13,7 +13,7 @@ export function EmailApp({ onOpenLink }) {
             </div>
 
             {/* Headers */}
-            <div className="bg-white p-6 border-b">
+            <div className="flex-shrink-0 bg-white p-4 border-b">
                 <div className="flex justify-between items-start mb-4">
                     <h1 className="text-xl font-bold text-gray-800">Final Offer: Data Verification Specialist</h1>
                     <span className="text-gray-500 text-xs">Today, 09:00 AM</span>
@@ -27,7 +27,7 @@ export function EmailApp({ onOpenLink }) {
             </div>
 
             {/* Body */}
-            <div className="p-8 bg-white flex-1 overflow-auto leading-relaxed text-gray-800">
+            <div className="p-4 sm:p-6 bg-white flex-1 min-h-0 overflow-auto leading-relaxed text-gray-800">
                 <p className="mb-4">Dear Applicant,</p>
                 <p className="mb-4">
                     We are pleased to offer you the position of <strong>Data Verification Specialist</strong> at S.A.V.E. Corporation.

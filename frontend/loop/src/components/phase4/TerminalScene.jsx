@@ -116,7 +116,7 @@ export function TerminalScene() {
 
         // Check for special commands
         if (command === 'WAKE_UP') {
-            setTimeout(() => setEnding('freedom'), response.length * 100 + 10000);
+            setTimeout(() => setEnding('freedom'), response.length * 50 + 3000);
         }
     };
 

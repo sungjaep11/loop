@@ -4,9 +4,10 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/loop/',
+  base: './',
   build: {
     outDir: '../public/loop',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
   },
 })
