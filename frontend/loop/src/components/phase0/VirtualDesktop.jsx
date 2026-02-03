@@ -70,7 +70,7 @@ export function VirtualDesktop({ onComplete }) {
                 <DesktopIcon icon="📧" label="Mail" onClick={() => toggleWindow('email')} />
                 <DesktopIcon icon="🌐" label="Browser" onClick={() => toggleWindow('browser')} />
 
-                {/* loop.exe appears after installation */}
+                {/* workspace.exe appears after installation */}
                 <AnimatePresence>
                     {wallpaper === 'save' && (
                         <motion.div
@@ -80,7 +80,7 @@ export function VirtualDesktop({ onComplete }) {
                         >
                             <DesktopIcon
                                 icon="💀"
-                                label="loop.exe"
+                                label="workspace.exe"
                                 className="text-red-500"
                                 onClick={onComplete}
                             />
@@ -98,8 +98,8 @@ export function VirtualDesktop({ onComplete }) {
                         isActive={activeWindow === 'email'}
                         onClose={() => closeWindow('email')}
                         onFocus={() => setActiveWindow('email')}
-                        width={900}
-                        height={650}
+                        width={720}
+                        height={480}
                     >
                         <EmailApp onOpenLink={() => toggleWindow('browser')} />
                     </Window>
@@ -112,8 +112,8 @@ export function VirtualDesktop({ onComplete }) {
                         isActive={activeWindow === 'browser'}
                         onClose={() => closeWindow('browser')}
                         onFocus={() => setActiveWindow('browser')}
-                        width={900}
-                        height={700}
+                        width={720}
+                        height={480}
                     >
                         <BrowserApp onDownload={() => toggleWindow('installer')} />
                     </Window>
@@ -131,6 +131,7 @@ export function VirtualDesktop({ onComplete }) {
                         isModal
                     >
                         <InstallerApp onComplete={() => {
+                            closeWindow('browser');   // Hide the browser tab/window
                             closeWindow('installer');
                             setWallpaper('save');
                         }} />
@@ -252,12 +253,12 @@ function Window({ id, title, children, isActive, onClose, onFocus, width = 600, 
             className={`absolute bg-[#d4d0c8] border-2 border-white shadow-[2px_2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden
             ${isActive ? 'z-40' : 'z-30'}`}
             style={{
-                left: isModal ? '50%' : '100px',
-                top: isModal ? '50%' : '50px',
+                left: '50%',
+                top: '50%',
                 width: size.width,
                 height: size.height,
-                x: isModal ? '-50%' : 0,
-                y: isModal ? '-50%' : 0
+                x: isModal ? '-50%' : -size.width / 2,
+                y: isModal ? '-50%' : -size.height / 2
             }}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -286,7 +287,7 @@ function Window({ id, title, children, isActive, onClose, onFocus, width = 600, 
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-auto relative bg-white border-2 border-l-gray-600 border-t-gray-600 border-r-white border-b-white m-1">
+            <div className="flex-1 min-h-0 overflow-auto relative bg-white border-2 border-l-gray-600 border-t-gray-600 border-r-white border-b-white m-1">
                 {children}
             </div>
 

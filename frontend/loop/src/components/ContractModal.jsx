@@ -7,9 +7,11 @@ export default function ContractModal({ onAgree }) {
     const [isChecked, setIsChecked] = useState(false);
     const [showStamp, setShowStamp] = useState(false);
     const [scrolledToBottom, setScrolledToBottom] = useState(false);
+    const [showDeclineMessage, setShowDeclineMessage] = useState(false);
 
     const scrollRef = useRef(null);
     const acceptTimerRef = useRef(null);
+    const declineMessageTimerRef = useRef(null);
 
     const playSFX = useAudioStore((s) => s.playSFX);
 
@@ -17,6 +19,7 @@ export default function ContractModal({ onAgree }) {
     useEffect(() => {
         return () => {
             if (acceptTimerRef.current) clearTimeout(acceptTimerRef.current);
+            if (declineMessageTimerRef.current) clearTimeout(declineMessageTimerRef.current);
         };
     }, []);
 
@@ -52,6 +55,12 @@ export default function ContractModal({ onAgree }) {
 
     const handleDecline = () => {
         playSFX('error');
+        if (declineMessageTimerRef.current) clearTimeout(declineMessageTimerRef.current);
+        setShowDeclineMessage(true);
+        declineMessageTimerRef.current = setTimeout(() => {
+            setShowDeclineMessage(false);
+            declineMessageTimerRef.current = null;
+        }, 3000);
     };
 
     // Handle accept button - requires scroll + checkbox
@@ -183,6 +192,21 @@ export default function ContractModal({ onAgree }) {
                             I have read and agree to all terms
                         </span>
                     </div>
+
+                    {/* Decline message */}
+                    <AnimatePresence>
+                        {showDeclineMessage && (
+                            <motion.p
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -4 }}
+                                className="text-center text-red-600 font-bold text-sm mb-3"
+                                style={{ marginBottom: '0.75rem' }}
+                            >
+                                Declining is not an option.
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
 
                     {/* Buttons */}
                     <div className="flex gap-4" style={{ display: 'flex', gap: '1rem' }}>

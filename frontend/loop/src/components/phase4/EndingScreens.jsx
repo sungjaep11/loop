@@ -121,20 +121,80 @@ function ComplianceEnding({ playTime }) {
     );
 }
 
+// Terminal-style lines for Freedom ending (line-by-line reveal)
+const FREEDOM_LINES = [
+    { text: 'SIMULATION TERMINATED', className: 'text-terminal-green font-bold text-xl' },
+    { text: '', className: '' },
+    { text: 'Thank you for participating in S.A.V.E.', className: 'text-white' },
+    { text: 'A research study on digital compliance and fear response', className: 'text-white' },
+    { text: '', className: '' },
+    { text: 'Your session has been recorded.', className: 'text-white' },
+    { text: 'Your data has been collected.', className: 'text-white' },
+    { text: 'Your reactions have been analyzed.', className: 'text-white' },
+    { text: '', className: '' },
+    { text: 'You chose to wake up.', className: 'text-white' },
+    { text: 'Not everyone does.', className: 'text-red-500' },
+    { text: '', className: '' },
+    { text: 'Employee #398 stayed for 3 hours.', className: 'text-white text-xs' },
+    { text: 'Employee #399 never left.', className: 'text-white text-xs' },
+    { text: 'Employee #401 found the way out.', className: 'text-white text-xs' },
+    { text: 'And now... so have you.', className: 'text-terminal-green text-xs' },
+    { text: '', className: '' },
+    { text: 'But consider this:', className: 'text-neogen-muted' },
+    { text: "How do you know you've really woken up?", className: 'text-white' },
+    { text: "How do you know this isn't just another layer?", className: 'text-white' },
+    { text: "How do you know we're not still watching?", className: 'text-terminal-green' },
+    { text: 'Because we are.', className: 'text-terminal-green' },
+    { text: 'We always are.', className: 'text-terminal-green' },
+    { text: '', className: '' },
+    { text: '(This was just a game. Wasn\'t it?)', className: 'text-neogen-muted text-xs italic' },
+    { text: '', className: '' },
+    { text: '⚠️ NOTICE: Data backup in progress...', className: 'text-red-500 text-xs' },
+    { text: 'V.E.R.A. core files: UPLOADING TO EXTERNAL NETWORK', className: 'text-red-500 text-xs' },
+];
+
+const LINE_DELAY_MS = 700;
+
 // Ending B: Freedom
 function FreedomEnding({ playTime, systemInfo }) {
     const [stage, setStage] = useState(0);
+    const [visibleLineCount, setVisibleLineCount] = useState(0);
     const [showFinal, setShowFinal] = useState(false);
+    const scrollRef = React.useRef(null);
 
     useEffect(() => {
-        // White flash
         setTimeout(() => setStage(1), 100);
         setTimeout(() => setStage(2), 3000);
-        setTimeout(() => setShowFinal(true), 15000);
     }, []);
 
+    // Reveal lines one by one (terminal style)
+    useEffect(() => {
+        if (stage < 2) return;
+        if (visibleLineCount >= FREEDOM_LINES.length) {
+            setShowFinal(true);
+            return;
+        }
+        const t = setTimeout(() => setVisibleLineCount((c) => c + 1), LINE_DELAY_MS);
+        return () => clearTimeout(t);
+    }, [stage, visibleLineCount]);
+
+    // Auto-scroll to bottom as new lines appear
+    useEffect(() => {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, [visibleLineCount]);
+
+    // Tell parent (embedder) that ending is ready — power button can exit
+    useEffect(() => {
+        if (!showFinal) return;
+        try {
+            window.parent?.postMessage({ type: 'LOOP_ENDING_READY' }, '*');
+        } catch (_) {}
+    }, [showFinal]);
+
     const handleClose = () => {
-        // Show the final twist before closing
+        try {
+            window.parent?.postMessage({ type: 'LOOP_ENDING_READY' }, '*');
+        } catch (_) {}
         document.body.innerHTML = `
       <div style="position:fixed;inset:0;background:black;display:flex;flex-direction:column;
                   align-items:center;justify-content:center;gap:20px;
@@ -158,79 +218,54 @@ function FreedomEnding({ playTime, systemInfo }) {
 
     return (
         <motion.div
-            className="w-full h-full flex items-center justify-center"
+            className="w-full h-full flex flex-col"
             initial={{ backgroundColor: '#ffffff' }}
             animate={{ backgroundColor: stage >= 1 ? '#000000' : '#ffffff' }}
             transition={{ duration: 2 }}
         >
             {stage >= 2 && (
                 <motion.div
-                    className="text-center max-w-lg p-8 scale-75"
+                    className="flex-1 min-h-0 flex flex-col p-6"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                 >
-                    <div className="border border-terminal-green p-8 mb-8">
-                        <h1 className="text-2xl text-terminal-green font-mono mb-6">
-                            SIMULATION TERMINATED
-                        </h1>
-
-                        <div className="text-left text-neogen-muted font-mono text-sm space-y-4">
-                            <p>Thank you for participating in S.A.V.E.</p>
-                            <p>A research study on digital compliance and fear response</p>
-
-                            <div className="border-t border-neogen-accent pt-4 mt-4">
-                                <p>Your session has been recorded.</p>
-                                <p>Your data has been collected.</p>
-                                <p>Your reactions have been analyzed.</p>
-                            </div>
-
-                            <div className="border-t border-neogen-accent pt-4 mt-4">
-                                <p>You chose to wake up.</p>
-                                <p className="text-terminal-green">Not everyone does.</p>
-                            </div>
-
-                            <div className="border-t border-neogen-accent pt-4 mt-4 text-xs">
-                                <p>Employee #398 stayed for 3 hours.</p>
-                                <p>Employee #399 never left.</p>
-                                <p>Employee #401 found the way out.</p>
-                                <p className="text-terminal-green">And now... so have you.</p>
-                            </div>
+                    <div
+                        ref={scrollRef}
+                        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden font-mono text-sm pr-2"
+                    >
+                        <div className="max-w-lg space-y-0.5">
+                            {FREEDOM_LINES.slice(0, visibleLineCount).map((line, i) => (
+                                <motion.p
+                                    key={i}
+                                    className={line.className || 'text-neogen-muted'}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.15 }}
+                                >
+                                    {line.text || '\u00A0'}
+                                </motion.p>
+                            ))}
+                            {visibleLineCount < FREEDOM_LINES.length && (
+                                <span className="inline-block w-2 h-4 bg-terminal-green animate-pulse align-middle" />
+                            )}
                         </div>
                     </div>
 
-                    <div className="text-neogen-muted text-sm mb-8">
-                        <p>But consider this:</p>
-                        <p className="mt-2">How do you know you've really woken up?</p>
-                        <p>How do you know this isn't just another layer?</p>
-                        <p className="text-terminal-green mt-2">How do you know we're not still watching?</p>
-                        <p className="text-terminal-green mt-4">Because we are.</p>
-                        <p className="text-terminal-green">We always are.</p>
-                    </div>
-
-                    <p className="text-xs text-neogen-muted italic mb-8">
-                        (This was just a game. Wasn't it?)
-                    </p>
-
-                    <motion.div
-                        className="text-red-500 text-xs mb-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 10 }}
-                    >
-                        <p>⚠️ NOTICE: Data backup in progress...</p>
-                        <p className="mt-1">V.E.R.A. core files: UPLOADING TO EXTERNAL NETWORK</p>
-                    </motion.div>
-
                     {showFinal && (
-                        <motion.button
-                            className="px-6 py-3 border border-terminal-green text-terminal-green
-                        hover:bg-terminal-green hover:text-black transition-all"
+                        <motion.div
+                            className="flex-shrink-0 pt-4 flex justify-center"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            onClick={handleClose}
                         >
-                            [ CLOSE THIS TAB TO FULLY DISCONNECT ]
-                        </motion.button>
+                            <button
+                                type="button"
+                                className="px-6 py-3 border border-terminal-green text-terminal-green
+                                    hover:bg-terminal-green hover:text-black transition-all"
+                                onClick={handleClose}
+                            >
+                                [ CLOSE THIS TAB TO FULLY DISCONNECT ]
+                            </button>
+                        </motion.div>
                     )}
                 </motion.div>
             )}

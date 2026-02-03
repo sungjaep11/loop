@@ -23,32 +23,11 @@ const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) 
     useEffect(() => {
         setCurrentFile(generateFile());
 
-        // Start Jazz BGM
-        try {
-            bgmRef.current = new Audio('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112778.mp3');
-            bgmRef.current.loop = true;
-            bgmRef.current.volume = 0.5;
-
-            const playPromise = bgmRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("BGM Autoplay prevented. Waiting for interaction.");
-                    // Optional: Add a one-time click listener to start it
-                    const resumeAudio = () => {
-                        bgmRef.current && bgmRef.current.play();
-                        window.removeEventListener('click', resumeAudio);
-                    };
-                    window.addEventListener('click', resumeAudio);
-                });
-            }
-        } catch (e) {
-            console.error("Audio setup failed", e);
-        }
-
+        // BGM removed: external CDN (Pixabay) returns 403 when embedded. Use audioStore.playAmbient or self-hosted file if needed.
         return () => {
             if (bgmRef.current) {
                 bgmRef.current.pause();
-                bgmRef.current.src = ""; // Unload
+                bgmRef.current.src = "";
                 bgmRef.current = null;
             }
         };

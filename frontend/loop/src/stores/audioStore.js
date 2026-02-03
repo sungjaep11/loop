@@ -55,7 +55,8 @@ const synth = new SynthEngine();
 
 // Ambient audio element for background music
 let ambientAudio = null;
-const LOFI_MUSIC_URL = 'https://cdn.pixabay.com/audio/2022/10/25/audio_f4c93c03ae.mp3'; // Lofi study music (public domain)
+// External CDN URLs (e.g. Pixabay) often return 403 when embedded. Use relative path to self-hosted file or skip.
+const AMBIENT_URL = null; // e.g. '/loop/audio/ambient.mp3' if you add a file to public
 
 export const useAudioStore = create((set, get) => ({
     audioEnabled: true,
@@ -136,14 +137,14 @@ export const useAudioStore = create((set, get) => ({
 
         console.log(`Playing ambient: ${name}`);
 
-        // Use lo-fi music for workspace/office ambient
+        // Use lo-fi music for workspace/office ambient (only if we have a valid source to avoid 403/CORS)
         if (name === 'officeAmbient' || name === 'lofi' || name === 'workspace') {
-            ambientAudio = new Audio(LOFI_MUSIC_URL);
-            ambientAudio.loop = true;
-            ambientAudio.volume = 0.3; // Background volume
-            ambientAudio.play().catch(err => {
-                console.warn('Ambient audio autoplay blocked:', err);
-            });
+            if (AMBIENT_URL) {
+                ambientAudio = new Audio(AMBIENT_URL);
+                ambientAudio.loop = true;
+                ambientAudio.volume = 0.3;
+                ambientAudio.play().catch(() => {});
+            }
             set({ currentAmbient: name });
         } else if (name === 'fluorescentHum') {
             // Silent for now - could add hum sound later
