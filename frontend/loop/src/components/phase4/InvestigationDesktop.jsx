@@ -5,10 +5,9 @@ import { FileManager } from './apps/FileManager';
 import { RecycleBin } from './apps/RecycleBin';
 import { ClipboardViewer } from './apps/ClipboardViewer';
 import { MemoViewer } from './apps/MemoViewer';
-import { HexError } from './apps/HexError';
 import { usePlayerStore } from '../../stores/playerStore';
 
-const DESKTOP_IDS_DELETION_ORDER = ['bin', 'calculator', 'notepad', 'ie', 'mydocs', 'controlpanel', 'error'];
+const DESKTOP_IDS_DELETION_ORDER = ['bin', 'calculator', 'notepad', 'ie', 'mydocs', 'controlpanel'];
 const KILL_PROCESS_COUNTDOWN_MS = 8000;
 const DELETION_INTERVAL_MS = 1800;
 
@@ -22,9 +21,7 @@ const INITIAL_FILES = {
         // Left column - row 2
         { id: 'calculator', name: 'Calculator', type: 'app', icon: '🧮', pos: { x: 5, y: 50 } },
         { id: 'notepad', name: 'Notepad', type: 'app', icon: '📝', pos: { x: 5, y: 64 } },
-        { id: 'controlpanel', name: 'Control Panel', type: 'app', icon: '⚙️', pos: { x: 5, y: 78 } },
-        // Important file in center-right
-        { id: 'error', name: 'Security_Log.exe', type: 'app', icon: '⚠️', pos: { x: 50, y: 50 } }
+        { id: 'controlpanel', name: 'Control Panel', type: 'app', icon: '⚙️', pos: { x: 5, y: 78 } }
     ],
     'hidden': [
         // Hidden file only visible when "Show Hidden Files" is enabled
@@ -32,9 +29,9 @@ const INITIAL_FILES = {
     ],
     'bin': [
         // Secret image files (right-click for properties)
-        { id: 'img1', name: 'Puppy.jpg', type: 'image', icon: '🖼️', properties: { creator: 'User_7th_Survivor', hint: '밝기를 낮춰보세요...' } },
-        { id: 'img2', name: 'Bread.png', type: 'image', icon: '🖼️', properties: { tag: 'Password_Is_', hint: '대비를 높이면 뭔가 보일지도...' } },
-        { id: 'img3', name: 'Coffee.png', type: 'image', icon: '🖼️', properties: { description: 'Hidden_In_Clipboard', hint: 'Control Panel을 확인해보세요' } },
+        { id: 'img1', name: 'Puppy.jpg', type: 'image', icon: '🖼️', properties: { creator: 'Stars only' } },
+        { id: 'img2', name: 'Bread.png', type: 'image', icon: '🖼️', properties: { description: 'shine in' } },
+        { id: 'img3', name: 'Coffee.png', type: 'image', icon: '🖼️', properties: { description: 'the dark' } },
         // Recoverable files needed for the puzzle
         { id: 'memo', name: 'Memo.txt', type: 'text', icon: '📄', restorable: true },
         { id: 'manual', name: 'Manual_Standard.pdf', type: 'file', icon: '📄', hiddenExt: 'zip', size: '500MB', restorable: true }
@@ -44,7 +41,7 @@ const INITIAL_FILES = {
 
 export function InvestigationDesktop({ onComplete }) {
     const playerName = usePlayerStore((state) => state.playerName) || 'User';
-    const [activeWindow, setActiveWindow] = useState(null); // 'fileManager', 'recycleBin', 'error', 'clipboard'
+    const [activeWindow, setActiveWindow] = useState(null); // 'fileManager', 'recycleBin', 'clipboard'
     const [clipboardHistory, setClipboardHistory] = useState([
         "Text copied: Report_Final_v2.docx",
         "Text copied: Abstract Concept of Soul",
@@ -67,6 +64,7 @@ export function InvestigationDesktop({ onComplete }) {
     const [showHiddenFiles, setShowHiddenFiles] = useState(false);
     const [showStartMenu, setShowStartMenu] = useState(false);
     const [screenContrast, setScreenContrast] = useState(100);
+    const [screenBrightness, setScreenBrightness] = useState(80);
     const [calculatorRotation, setCalculatorRotation] = useState(0);
 
     // Intro & Game Loop
@@ -111,14 +109,14 @@ export function InvestigationDesktop({ onComplete }) {
     const getVeraMessage = () => {
         if (gameState === 'crash') return "";
         if (gameState === 'active') {
-            if (recoveryProgress < 10) return "예기치 않은 오류가 발생했습니다. 시스템 복구를 위해 잠시 점검을 진행합니다. 이 자리에서 대기해 주세요.";
-            if (recoveryProgress < 40) return "메모리 누수 원인 분석 중...";
-            if (recoveryProgress < 60) return "복구 예상 시간: 2분";
-            if (recoveryProgress < 90) return "데이터 무결성 검사... 시스템 재시작 준비 중입니다.";
-            if (recoveryProgress < 99) return "거의 완료되었습니다. 잠시만 기다려주세요.";
-            return "복구 완료... 사용자님, 화면이 왜 바뀌어 있죠?";
+            if (recoveryProgress < 10) return "An unexpected error has occurred. Running diagnostics for system recovery. Please stay where you are.";
+            if (recoveryProgress < 40) return "Analyzing memory leak cause...";
+            if (recoveryProgress < 60) return "Estimated recovery time: 2 minutes";
+            if (recoveryProgress < 90) return "Data integrity check... Preparing system restart.";
+            if (recoveryProgress < 99) return "Almost complete. Please wait a moment.";
+            return "Recovery complete... User, why has the screen changed?";
         }
-        if (gameState === 'caught') return "관리자 권한 없이 시스템에 접근하셨군요. 보안 프로토콜을 가동합니다.";
+        if (gameState === 'caught') return "You accessed the system without administrator privileges. Initiating security protocol.";
         if (gameState === 'saved') return "CRITICAL ERROR... SYSTEM SHUTDOWN INITIATED...";
         return "";
     };
@@ -220,12 +218,12 @@ export function InvestigationDesktop({ onComplete }) {
                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(139,92,246,0.3)_0%,_transparent_50%)]" />
                 <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/dark-mosaic.png')]" />
 
-                {/* Hidden text revealed at high contrast */}
-                {screenContrast >= 150 && (
+                {/* Number revealed when brightness is lowered */}
+                {screenBrightness <= 40 && (
                     <div
                         className="absolute bottom-16 right-8 z-[5] pointer-events-none select-none"
                         style={{
-                            opacity: Math.min((screenContrast - 150) / 50 * 0.4 + 0.1, 0.5)
+                            opacity: Math.min((41 - screenBrightness) / 40 * 0.4 + 0.1, 0.5)
                         }}
                     >
                         <p className="text-6xl font-mono font-bold text-white/60 tracking-[0.3em]" style={{ textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
@@ -314,7 +312,6 @@ export function InvestigationDesktop({ onComplete }) {
                             onDoubleClick={() => {
                                 if (deletedDesktopIds.has(file.id)) return;
                                 if (file.id === 'bin') toggleWindow('recycleBin');
-                                else if (file.id === 'error') toggleWindow('hexError');
                                 // Restored files from recycle bin
                                 else if (file.id === 'memo') toggleWindow('memo');
                                 else if (file.id === 'manual') toggleWindow('fileManager_manual');
@@ -391,12 +388,6 @@ export function InvestigationDesktop({ onComplete }) {
                         </Window>
                     )}
 
-                    {windows.includes('hexError') && (
-                        <Window id="hexError" title="System Error" isModal onClose={() => closeWindow('hexError')} isActive={activeWindow === 'hexError'} onClick={() => setActiveWindow('hexError')}>
-                            <HexError />
-                        </Window>
-                    )}
-
                     {windows.includes('clipboard') && (
                         <Window id="clipboard" title="Clipboard History" onClose={() => closeWindow('clipboard')} isActive={activeWindow === 'clipboard'} onClick={() => setActiveWindow('clipboard')} width={300} height={400}>
                             <ClipboardViewer history={clipboardHistory} />
@@ -467,7 +458,7 @@ export function InvestigationDesktop({ onComplete }) {
 
                     {windows.includes('dummyControl') && (
                         <Window id="dummyControl" title="Control Panel" onClose={() => closeWindow('dummyControl')} isActive={activeWindow === 'dummyControl'} onClick={() => setActiveWindow('dummyControl')} width={500} height={400}>
-                            <DummyApp type="controlpanel" onContrastChange={setScreenContrast} />
+                            <DummyApp type="controlpanel" onContrastChange={setScreenContrast} onBrightnessChange={setScreenBrightness} />
                         </Window>
                     )}
 
@@ -588,7 +579,7 @@ export function InvestigationDesktop({ onComplete }) {
                 />
             </motion.div>
 
-            {/* 3. V.E.R.A. Dialogue Overlay */}
+            {/* 3. V.E.R.A. Dialogue Overlay — cold, system-like, slightly unsettling */}
             <AnimatePresence>
                 {(gameState === 'active' || gameState === 'caught') && veraMessage && (
                     <motion.div
@@ -597,25 +588,25 @@ export function InvestigationDesktop({ onComplete }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                     >
-                        <div className="bg-black/80 border-l-4 border-cyan-500 text-cyan-100 p-4 rounded shadow-[0_0_20px_rgba(0,255,255,0.2)] flex items-start gap-4 backdrop-blur-sm">
-                            <div className="w-12 h-12 rounded-full bg-cyan-900 border border-cyan-500 flex items-center justify-center shrink-0 animate-pulse">
-                                <span className="text-2xl">👁️</span>
+                        <div className="bg-[#060809]/95 border-l-4 border-red-900/90 text-slate-200 p-4 rounded-sm shadow-[0_0_25px_rgba(80,0,0,0.25)] flex items-start gap-4 backdrop-blur-sm">
+                            <div className="w-11 h-11 rounded-full bg-red-950/80 border border-red-900/70 flex items-center justify-center shrink-0">
+                                <span className="text-lg font-mono text-red-500/90">◇</span>
                             </div>
                             <div className="flex-1">
                                 <div className="flex justify-between items-baseline mb-1">
-                                    <span className="font-bold text-cyan-400 text-sm tracking-widest">V.E.R.A.</span>
-                                    <span className="text-[10px] text-cyan-700 font-mono">SYSTEM_ADMIN</span>
+                                    <span className="font-mono font-bold text-red-400/90 text-xs tracking-[0.2em] uppercase">V.E.R.A.</span>
+                                    <span className="text-[10px] text-red-950 font-mono opacity-80">CORE</span>
                                 </div>
-                                <p className="text-sm font-light leading-relaxed font-sans">{veraMessage}</p>
+                                <p className="text-sm font-mono leading-relaxed text-slate-300">{veraMessage}</p>
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* 4. Drop Zone (Always available in Active state) */}
+            {/* 4. Drop Zone - bottom right above taskbar/time */}
             {(gameState === 'active') && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none">
+                <div className="absolute bottom-14 right-6 z-[100] pointer-events-none">
                     <div
                         onDragOver={handleDragOver}
                         onDrop={handleKillProcessDrop}
@@ -682,7 +673,7 @@ function DesktopIcon({ file, name, onDoubleClick, isDeleted, isHidden }) {
             <div className={`text-5xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] group-hover:scale-110 group-hover:drop-shadow-[0_6px_12px_rgba(100,150,255,0.4)] transition-all duration-200 ${isHidden ? 'animate-pulse' : ''}`}>
                 {file.icon}
             </div>
-            <span className={`text-xs text-center font-semibold px-2 py-0.5 rounded backdrop-blur-sm group-hover:bg-blue-600/70 break-all leading-tight shadow-lg max-w-full
+            <span className={`text-xs text-center font-semibold px-2 py-0.5 rounded backdrop-blur-sm group-hover:bg-blue-600/70 whitespace-nowrap leading-tight shadow-lg
                 ${isHidden ? 'bg-purple-900/60 text-purple-200 border border-purple-500/50' : 'bg-black/40 text-white'}`}>
                 {name}
             </span>
@@ -766,7 +757,7 @@ function Taskbar({ windows, activeWindow, onWindowClick, onStartClick, time }) {
 }
 
 // Dummy application component for fake programs
-function DummyApp({ type, onContrastChange, onOpenLog, onRotationChange }) {
+function DummyApp({ type, onContrastChange, onBrightnessChange, onOpenLog, onRotationChange }) {
     const apps = {
         calculator: {
             content: <CalculatorApp onOpenLog={onOpenLog} onRotationChange={onRotationChange} />
@@ -806,7 +797,7 @@ function DummyApp({ type, onContrastChange, onOpenLog, onRotationChange }) {
             content: <MyDocumentsApp />
         },
         controlpanel: {
-            content: <ControlPanelApp onContrastChange={onContrastChange} />
+            content: <ControlPanelApp onContrastChange={onContrastChange} onBrightnessChange={onBrightnessChange} />
         }
     };
 
@@ -1436,7 +1427,7 @@ If you're reading this...
 }
 
 // Interactive Control Panel App
-function ControlPanelApp({ onContrastChange }) {
+function ControlPanelApp({ onContrastChange, onBrightnessChange }) {
     const [currentPanel, setCurrentPanel] = useState(null);
     const [settings, setSettings] = useState({
         volume: 75,
@@ -1476,21 +1467,28 @@ function ControlPanelApp({ onContrastChange }) {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs text-gray-600 mb-1">Brightness: {settings.brightness}%</label>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                Brightness: {settings.brightness}%
+                                {settings.brightness <= 40 && <span className="ml-2 text-red-500 animate-pulse">⚠️</span>}
+                            </label>
                             <input
                                 type="range"
                                 min="0"
                                 max="100"
                                 value={settings.brightness}
-                                onChange={(e) => setSettings({ ...settings, brightness: parseInt(e.target.value) })}
+                                onChange={(e) => {
+                                    const v = parseInt(e.target.value);
+                                    setSettings({ ...settings, brightness: v });
+                                    onBrightnessChange?.(v);
+                                }}
                                 className="w-full"
                             />
+                            {settings.brightness <= 40 && (
+                                <p className="text-[10px] text-gray-500 mt-1">Something appears on screen...</p>
+                            )}
                         </div>
                         <div>
-                            <label className="block text-xs text-gray-600 mb-1">
-                                Contrast: {settings.contrast}%
-                                {settings.contrast >= 150 && <span className="ml-2 text-red-500 animate-pulse">⚠️</span>}
-                            </label>
+                            <label className="block text-xs text-gray-600 mb-1">Contrast: {settings.contrast}%</label>
                             <input
                                 type="range"
                                 min="50"
@@ -1499,9 +1497,6 @@ function ControlPanelApp({ onContrastChange }) {
                                 onChange={(e) => handleContrastChange(parseInt(e.target.value))}
                                 className="w-full"
                             />
-                            {settings.contrast >= 150 && (
-                                <p className="text-[10px] text-gray-500 mt-1">Something appears on screen...</p>
-                            )}
                         </div>
                         <div>
                             <label className="block text-xs text-gray-600 mb-1">Theme</label>

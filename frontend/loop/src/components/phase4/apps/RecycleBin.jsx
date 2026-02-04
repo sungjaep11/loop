@@ -230,12 +230,6 @@ function PropertiesDialog({ file, onClose }) {
                         <span className="font-mono font-bold text-blue-600">{p.description}</span>
                     </div>
                 )}
-                {p.hint != null && (
-                    <div className="mt-3 p-2 bg-yellow-50 border border-yellow-300 rounded">
-                        <p className="text-[10px] text-yellow-600 mb-1">💡 NOTE (hidden metadata):</p>
-                        <p className="text-xs text-yellow-800 italic">{p.hint}</p>
-                    </div>
-                )}
                 {!p.creator && !p.tag && !p.description && (
                     <div className="text-gray-400 italic">No details</div>
                 )}
