@@ -24,6 +24,7 @@ import { GlitchScene } from './GlitchScene';
 import { InvestigationDesktop } from './phase4/InvestigationDesktop';
 import { MirrorScene } from './phase4/MirrorScene';
 import { TerminalScene } from './phase4/TerminalScene';
+import { VeraEscapeSequence } from './phase4/VeraEscapeSequence';
 import { EndingScreens } from './phase4/EndingScreens';
 import { DebugSceneSwitcher } from './DebugSceneSwitcher';
 
@@ -89,6 +90,10 @@ export function GameController() {
             case 'terminal':
                 // Final interaction
                 return <TerminalScene />;
+
+            case 'logicDuel':
+                // Escape vs V.E.R.A. — from KILL_PROCESS run to password input
+                return <VeraEscapeSequence />;
 
             case 'ending':
                 return <EndingScreens />;

@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function Home() {
   const [time, setTime] = useState<string>("");
   // Auto-open the loop app immediately
   const [loopAppOpen, setLoopAppOpen] = useState(true);
 
-  // Stable cache-bust value that doesn't change on re-renders
-  const cacheBustRef = useRef(Date.now());
+  // Iframe src: stable on first render to avoid hydration mismatch (server vs client Date.now() differs)
+  const [iframeSrc, setIframeSrc] = useState("/loop/index.html");
 
   // 시계 기능: 1초마다 현재 시간 업데이트
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function Home() {
                   <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center bg-black">
                     <iframe
                       title="loop"
-                      src={`/loop/index.html?v=${cacheBustRef.current}`}
+                      src={iframeSrc}
                       className="absolute border-0 bg-black"
                       style={{ width: '100%', height: '100%' }}
                     />
@@ -131,8 +131,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => {
-                  // Update cache bust to force iframe reload
-                  cacheBustRef.current = Date.now();
+                  setIframeSrc((prev) => `/loop/index.html?v=${Date.now()}`);
                   setLoopAppOpen(false);
                   setTimeout(() => setLoopAppOpen(true), 100);
                 }}

@@ -16,6 +16,7 @@ const SCENES = [
     'investigation',
     'mirror',
     'terminal',
+    'logicDuel',
     'ending'
 ];
 
