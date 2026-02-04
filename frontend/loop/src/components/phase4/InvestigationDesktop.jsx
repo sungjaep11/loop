@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { FileManager } from './apps/FileManager';
 import { RecycleBin } from './apps/RecycleBin';
 import { ClipboardViewer } from './apps/ClipboardViewer';
@@ -26,11 +26,15 @@ const INITIAL_FILES = {
         // Important file in center-right
         { id: 'error', name: 'Security_Log.exe', type: 'app', icon: '⚠️', pos: { x: 50, y: 50 } }
     ],
+    'hidden': [
+        // Hidden file only visible when "Show Hidden Files" is enabled
+        { id: 'userlog', name: 'User_Log_History.txt', type: 'hiddenlog', icon: '📋', pos: { x: 85, y: 8 } }
+    ],
     'bin': [
         // Secret image files (right-click for properties)
-        { id: 'img1', name: 'Puppy.jpg', type: 'image', icon: '🖼️', properties: { creator: 'User_7th_Survivor' } },
-        { id: 'img2', name: 'Bread.png', type: 'image', icon: '🖼️', properties: { tag: 'Password_Is_' } },
-        { id: 'img3', name: 'Coffee.png', type: 'image', icon: '🖼️', properties: { description: 'Hidden_In_Clipboard' } },
+        { id: 'img1', name: 'Puppy.jpg', type: 'image', icon: '🖼️', properties: { creator: 'User_7th_Survivor', hint: '밝기를 낮춰보세요...' } },
+        { id: 'img2', name: 'Bread.png', type: 'image', icon: '🖼️', properties: { tag: 'Password_Is_', hint: '대비를 높이면 뭔가 보일지도...' } },
+        { id: 'img3', name: 'Coffee.png', type: 'image', icon: '🖼️', properties: { description: 'Hidden_In_Clipboard', hint: 'Control Panel을 확인해보세요' } },
         // Recoverable files needed for the puzzle
         { id: 'memo', name: 'Memo.txt', type: 'text', icon: '📄', restorable: true },
         { id: 'manual', name: 'Manual_Standard.pdf', type: 'file', icon: '📄', hiddenExt: 'zip', size: '500MB', restorable: true }
@@ -58,6 +62,13 @@ export function InvestigationDesktop({ onComplete }) {
     const [deletedDesktopIds, setDeletedDesktopIds] = useState(() => new Set());
     const [killProcessSaved, setKillProcessSaved] = useState(false);
 
+    // NEW: Desktop context menu & hidden files
+    const [desktopContextMenu, setDesktopContextMenu] = useState(null);
+    const [showHiddenFiles, setShowHiddenFiles] = useState(false);
+    const [showStartMenu, setShowStartMenu] = useState(false);
+    const [screenContrast, setScreenContrast] = useState(100);
+    const [calculatorRotation, setCalculatorRotation] = useState(0);
+
     // Intro & Game Loop
     useEffect(() => {
         // Phase 1: Crash Overlay (3s)
@@ -68,7 +79,7 @@ export function InvestigationDesktop({ onComplete }) {
             return () => clearTimeout(timer);
         }
 
-        // Phase 2: Active Recovery Loop (2 mins approx)
+        // Phase 2: Active Recovery Loop (5 mins)
         if (gameState === 'active') {
             const timer = setInterval(() => {
                 setRecoveryProgress(prev => {
@@ -77,10 +88,8 @@ export function InvestigationDesktop({ onComplete }) {
                         setGameState('caught');
                         return 100;
                     }
-                    return prev + 0.15; // Approx 100 / (120s * 60fps?) No, interval is default ms.
-                    // Let's use 100ms interval. 0.1 per 100ms = 1% per sec = 100s total.
-                    // User asked for ~2 mins. 100% / 120s = 0.83% per sec.
-                    // 0.083 per 100ms.
+                    // 5 minutes = 300 seconds. 100% / 300s = 0.33% per sec = 0.033% per 100ms
+                    return prev + 0.033;
                 });
             }, 100);
             return () => clearInterval(timer);
@@ -210,15 +219,88 @@ export function InvestigationDesktop({ onComplete }) {
                 <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,_rgba(59,130,246,0.3)_0%,_transparent_50%)]" />
                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(139,92,246,0.3)_0%,_transparent_50%)]" />
                 <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/dark-mosaic.png')]" />
+
+                {/* Hidden text revealed at high contrast */}
+                {screenContrast >= 150 && (
+                    <div
+                        className="absolute bottom-16 right-8 z-[5] pointer-events-none select-none"
+                        style={{
+                            opacity: Math.min((screenContrast - 150) / 50 * 0.4 + 0.1, 0.5)
+                        }}
+                    >
+                        <p className="text-6xl font-mono font-bold text-white/60 tracking-[0.3em]" style={{ textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
+                            77345
+                        </p>
+                    </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                     <span className="text-[12rem] font-black text-white tracking-widest">S.A.V.E.</span>
                 </div>
+
+                {/* Desktop right-click area */}
+                <div
+                    className="absolute inset-0"
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        setDesktopContextMenu({ x: e.clientX, y: e.clientY });
+                        setShowStartMenu(false);
+                    }}
+                    onClick={() => {
+                        setDesktopContextMenu(null);
+                        setShowStartMenu(false);
+                    }}
+                />
+
+                {/* Desktop Context Menu */}
+                <AnimatePresence>
+                    {desktopContextMenu && (
+                        <motion.div
+                            className="absolute bg-[#f5f5f5] border-2 border-gray-400 shadow-lg z-[200] min-w-[180px] text-black"
+                            style={{ left: desktopContextMenu.x, top: desktopContextMenu.y }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                            <button
+                                className="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white text-sm flex items-center gap-2 text-black"
+                                onClick={() => {
+                                    setDesktopContextMenu(null);
+                                }}
+                            >
+                                <span>🔄</span> Refresh
+                            </button>
+                            <div className="border-t border-gray-300" />
+                            <button
+                                className={`w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white text-sm flex items-center gap-2 text-black ${showHiddenFiles ? 'bg-blue-100' : ''}`}
+                                onClick={() => {
+                                    setShowHiddenFiles(!showHiddenFiles);
+                                    setDesktopContextMenu(null);
+                                }}
+                            >
+                                <span>{showHiddenFiles ? '✓' : '  '}</span> Show Hidden Files
+                            </button>
+                            <div className="border-t border-gray-300" />
+                            <button
+                                className="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white text-sm flex items-center gap-2 opacity-50 cursor-not-allowed text-black"
+                                disabled
+                            >
+                                <span>📋</span> Paste
+                            </button>
+                            <button
+                                className="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white text-sm flex items-center gap-2 opacity-50 cursor-not-allowed text-black"
+                                disabled
+                            >
+                                <span>⚙️</span> Properties
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Desktop Icons — scattered across desktop, grey out when "deleted" by AI */}
                 {files.desktop.map(file => (
                     <div
                         key={file.id}
-                        className="absolute"
+                        className="absolute z-10"
                         style={{
                             left: `${file.pos?.x || 10}%`,
                             top: `${file.pos?.y || 10}%`,
@@ -243,6 +325,29 @@ export function InvestigationDesktop({ onComplete }) {
                                 else if (file.id === 'mydocs') toggleWindow('dummyDocs');
                                 else if (file.id === 'mydocs') toggleWindow('dummyDocs');
                                 else if (file.id === 'controlpanel') toggleWindow('dummyControl');
+                            }}
+                        />
+                    </div>
+                ))}
+
+                {/* Hidden Files - only visible when showHiddenFiles is true */}
+                {showHiddenFiles && files.hidden?.map(file => (
+                    <div
+                        key={file.id}
+                        className="absolute z-10"
+                        style={{
+                            left: `${file.pos?.x || 10}%`,
+                            top: `${file.pos?.y || 10}%`,
+                            transform: 'translate(-50%, -50%)'
+                        }}
+                    >
+                        <DesktopIcon
+                            file={file}
+                            name={file.name}
+                            isDeleted={false}
+                            isHidden={true}
+                            onDoubleClick={() => {
+                                if (file.id === 'userlog') toggleWindow('userLog');
                             }}
                         />
                     </div>
@@ -300,8 +405,24 @@ export function InvestigationDesktop({ onComplete }) {
 
                     {/* Dummy Windows */}
                     {windows.includes('dummyCalculator') && (
-                        <Window id="dummyCalculator" title="Calculator" onClose={() => closeWindow('dummyCalculator')} isActive={activeWindow === 'dummyCalculator'} onClick={() => setActiveWindow('dummyCalculator')} width={280} height={350}>
-                            <DummyApp type="calculator" />
+                        <Window
+                            id="dummyCalculator"
+                            title="Calculator"
+                            onClose={() => closeWindow('dummyCalculator')}
+                            isActive={activeWindow === 'dummyCalculator'}
+                            onClick={() => setActiveWindow('dummyCalculator')}
+                            width={280}
+                            height={380}
+                            style={{
+                                rotate: calculatorRotation,
+                                transformOrigin: '50% 60%' // Pivot around Button 5
+                            }}
+                        >
+                            <DummyApp type="calculator" onOpenLog={() => {
+                                setShowHiddenFiles(true);
+                                toggleWindow('userLog');
+                                setActiveWindow('userLog');
+                            }} onRotationChange={setCalculatorRotation} />
                         </Window>
                     )}
                     {windows.includes('dummyNotepad') && (
@@ -346,8 +467,111 @@ export function InvestigationDesktop({ onComplete }) {
 
                     {windows.includes('dummyControl') && (
                         <Window id="dummyControl" title="Control Panel" onClose={() => closeWindow('dummyControl')} isActive={activeWindow === 'dummyControl'} onClick={() => setActiveWindow('dummyControl')} width={500} height={400}>
-                            <DummyApp type="controlpanel" />
+                            <DummyApp type="controlpanel" onContrastChange={setScreenContrast} />
                         </Window>
+                    )}
+
+                    {/* Hidden User Log - reveals clue about password */}
+                    {windows.includes('userLog') && (
+                        <Window id="userLog" title="User_Log_History.txt - [ARCHIVED]" onClose={() => closeWindow('userLog')} isActive={activeWindow === 'userLog'} onClick={() => setActiveWindow('userLog')} width={520} height={500}>
+                            <UserLogWindow onPasswordSuccess={() => {
+                                // User entered correct password - copy to clipboard
+                                setClipboardHistory(prev => ['S4V3_TH3_S0UL', ...prev]);
+                            }} />
+                        </Window>
+                    )}
+                </AnimatePresence>
+
+                {/* Start Menu */}
+                <AnimatePresence>
+                    {showStartMenu && (
+                        <motion.div
+                            className="absolute bottom-10 left-0 w-64 bg-gradient-to-b from-[#245edb] to-[#0138b5] border-2 border-[#3980f4] shadow-2xl z-[150]"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                        >
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-blue-800 to-blue-600 p-3 border-b border-blue-400">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center">
+                                        <span className="text-xl">👤</span>
+                                    </div>
+                                    <span className="text-white font-bold text-sm">Employee #{playerName}</span>
+                                </div>
+                            </div>
+
+                            {/* Menu Items */}
+                            <div className="bg-white py-1 text-black">
+                                <button
+                                    className="w-full text-left px-4 py-2 hover:bg-blue-600 hover:text-white flex items-center gap-3 text-sm text-black"
+                                    onClick={() => {
+                                        toggleWindow('dummyControl');
+                                        setShowStartMenu(false);
+                                    }}
+                                >
+                                    <span className="text-lg">⚙️</span>
+                                    <span>Control Panel</span>
+                                </button>
+                                <button
+                                    className="w-full text-left px-4 py-2 hover:bg-blue-600 hover:text-white flex items-center gap-3 text-sm text-black"
+                                    onClick={() => {
+                                        toggleWindow('clipboard');
+                                        setShowStartMenu(false);
+                                    }}
+                                >
+                                    <span className="text-lg">📋</span>
+                                    <span>Clipboard Viewer</span>
+                                </button>
+                                <button
+                                    className="w-full text-left px-4 py-2 hover:bg-blue-600 hover:text-white flex items-center gap-3 text-sm text-black"
+                                    onClick={() => {
+                                        toggleWindow('dummyDocs');
+                                        setShowStartMenu(false);
+                                    }}
+                                >
+                                    <span className="text-lg">📁</span>
+                                    <span>My Documents</span>
+                                </button>
+                                <div className="border-t border-gray-200 my-1" />
+                                <button
+                                    className="w-full text-left px-4 py-2 hover:bg-blue-600 hover:text-white flex items-center gap-3 text-sm text-black"
+                                    onClick={() => {
+                                        toggleWindow('dummyCalculator');
+                                        setShowStartMenu(false);
+                                    }}
+                                >
+                                    <span className="text-lg">🧮</span>
+                                    <span>Calculator</span>
+                                </button>
+                                <button
+                                    className="w-full text-left px-4 py-2 hover:bg-blue-600 hover:text-white flex items-center gap-3 text-sm text-black"
+                                    onClick={() => {
+                                        toggleWindow('dummyNotepad');
+                                        setShowStartMenu(false);
+                                    }}
+                                >
+                                    <span className="text-lg">📝</span>
+                                    <span>Notepad</span>
+                                </button>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 flex items-center justify-between">
+                                <button
+                                    className="text-white text-xs hover:underline flex items-center gap-1 opacity-50 cursor-not-allowed"
+                                    disabled
+                                >
+                                    <span>🔒</span> Log Off
+                                </button>
+                                <button
+                                    className="text-white text-xs hover:underline flex items-center gap-1 opacity-50 cursor-not-allowed"
+                                    disabled
+                                >
+                                    <span>⏻</span> Shut Down
+                                </button>
+                            </div>
+                        </motion.div>
                     )}
                 </AnimatePresence>
 
@@ -356,7 +580,10 @@ export function InvestigationDesktop({ onComplete }) {
                     windows={windows}
                     activeWindow={activeWindow}
                     onWindowClick={setActiveWindow}
-                    onStartClick={() => toggleWindow('clipboard')}
+                    onStartClick={() => {
+                        setShowStartMenu(!showStartMenu);
+                        setDesktopContextMenu(null);
+                    }}
                     time={new Date().toLocaleTimeString()}
                 />
             </motion.div>
@@ -365,10 +592,10 @@ export function InvestigationDesktop({ onComplete }) {
             <AnimatePresence>
                 {(gameState === 'active' || gameState === 'caught') && veraMessage && (
                     <motion.div
-                        className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-4"
-                        initial={{ opacity: 0, y: 20 }}
+                        className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-4"
+                        initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
+                        exit={{ opacity: 0, y: -20 }}
                     >
                         <div className="bg-black/80 border-l-4 border-cyan-500 text-cyan-100 p-4 rounded shadow-[0_0_20px_rgba(0,255,255,0.2)] flex items-start gap-4 backdrop-blur-sm">
                             <div className="w-12 h-12 rounded-full bg-cyan-900 border border-cyan-500 flex items-center justify-center shrink-0 animate-pulse">
@@ -444,41 +671,55 @@ export function InvestigationDesktop({ onComplete }) {
 }
 
 // Subcomponents (Icons, Window, Taskbar)
-function DesktopIcon({ file, name, onDoubleClick, isDeleted }) {
+function DesktopIcon({ file, name, onDoubleClick, isDeleted, isHidden }) {
     return (
         <div
             className={`flex flex-col items-center gap-2 w-28 group transition-all duration-300
-                ${isDeleted ? 'opacity-40 grayscale pointer-events-none' : 'cursor-pointer'}`}
+                ${isDeleted ? 'opacity-40 grayscale pointer-events-none' : 'cursor-pointer'}
+                ${isHidden ? 'opacity-70' : ''}`}
             onDoubleClick={onDoubleClick}
         >
-            <div className="text-5xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] group-hover:scale-110 group-hover:drop-shadow-[0_6px_12px_rgba(100,150,255,0.4)] transition-all duration-200">
+            <div className={`text-5xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] group-hover:scale-110 group-hover:drop-shadow-[0_6px_12px_rgba(100,150,255,0.4)] transition-all duration-200 ${isHidden ? 'animate-pulse' : ''}`}>
                 {file.icon}
             </div>
-            <span className="text-white text-xs text-center font-semibold px-2 py-0.5 rounded bg-black/40 backdrop-blur-sm group-hover:bg-blue-600/70 break-all leading-tight shadow-lg max-w-full">
+            <span className={`text-xs text-center font-semibold px-2 py-0.5 rounded backdrop-blur-sm group-hover:bg-blue-600/70 break-all leading-tight shadow-lg max-w-full
+                ${isHidden ? 'bg-purple-900/60 text-purple-200 border border-purple-500/50' : 'bg-black/40 text-white'}`}>
                 {name}
             </span>
         </div>
     );
 }
 
-function Window({ id, title, children, onClose, isActive, onClick, isModal, width = 600, height = 450 }) {
+function Window({ id, title, children, onClose, isActive, onClick, isModal, width = 600, height = 450, style }) {
+    // Extract rotate to ensure it's handled by animate, preventing conflict with drag transform
+    const { rotate, ...restStyle } = style || {};
+    const dragControls = useDragControls();
+
     return (
         <motion.div
             className={`absolute flex flex-col bg-[#ece9d8] border-[3px] border-[#0055ea] rounded-t-lg shadow-2xl overflow-hidden
             ${isActive ? 'z-50' : 'z-40 grayscale-[0.2]'}`}
             style={{
                 left: isModal ? '50%' : '100px', top: isModal ? '50%' : '50px',
-                width, height, x: isModal ? '-50%' : 0, y: isModal ? '-50%' : 0
+                width, height, x: isModal ? '-50%' : 0, y: isModal ? '-50%' : 0,
+                ...restStyle
             }}
             initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: 1, rotate: rotate || 0 }}
             exit={{ scale: 0.9, opacity: 0 }}
             drag={!isModal}
+            dragListener={false}
+            dragControls={dragControls}
             dragMomentum={false}
             onPointerDown={onClick}
         >
             {/* Title Bar */}
-            <div className="h-8 bg-gradient-to-r from-[#0058ee] to-[#3f96fe] flex items-center justify-between px-2 text-white font-bold text-shadow-sm select-none">
+            <div
+                className="h-8 bg-gradient-to-r from-[#0058ee] to-[#3f96fe] flex items-center justify-between px-2 text-white font-bold text-shadow-sm select-none cursor-default"
+                onPointerDown={(e) => {
+                    dragControls.start(e);
+                }}
+            >
                 <span className="flex items-center gap-2 text-sm">{title}</span>
                 <div className="flex gap-1">
                     <button className="w-5 h-5 bg-[#d84030] rounded border border-white/50 hover:bg-[#ff5040] flex items-center justify-center font-normal" onClick={(e) => { e.stopPropagation(); onClose(); }}>×</button>
@@ -525,10 +766,10 @@ function Taskbar({ windows, activeWindow, onWindowClick, onStartClick, time }) {
 }
 
 // Dummy application component for fake programs
-function DummyApp({ type }) {
+function DummyApp({ type, onContrastChange, onOpenLog, onRotationChange }) {
     const apps = {
         calculator: {
-            content: <CalculatorApp />
+            content: <CalculatorApp onOpenLog={onOpenLog} onRotationChange={onRotationChange} />
         },
         notepad: {
             content: (
@@ -565,7 +806,7 @@ function DummyApp({ type }) {
             content: <MyDocumentsApp />
         },
         controlpanel: {
-            content: <ControlPanelApp />
+            content: <ControlPanelApp onContrastChange={onContrastChange} />
         }
     };
 
@@ -870,12 +1111,87 @@ function MyDocumentsApp({ restoredFiles = [], onOpenMemo, onOpenManual, onRename
     );
 }
 
-// Functional Calculator App
-function CalculatorApp() {
+// Functional Calculator App with drag rotation
+function CalculatorApp({ onOpenLog, onRotationChange }) {
     const [display, setDisplay] = useState('0');
     const [previousValue, setPreviousValue] = useState(null);
     const [operation, setOperation] = useState(null);
     const [waitingForOperand, setWaitingForOperand] = useState(false);
+
+    // Initial angles for rotation calculation
+    const [isDragging, setIsDragging] = useState(false);
+    const [startAngle, setStartAngle] = useState(0);
+    const [startRotation, setStartRotation] = useState(0);
+    // We track the current rotation internally to smooth out the drag,
+    // but the actual rotation is applied to the window by the parent via onRotationChange
+    // So we need to know the current rotation from props if possible,
+    // or we assume we control the delta.
+    // Ideally CalculatorApp shouldn't manage the rotation state, but it calculates the DELTA.
+    // However, to calculate delta properly with atan2, we need the initial rotation.
+    // Let's assume onRotationChange passes the new absolute rotation.
+    // We need to know the current rotation of the window to add delta.
+    // Since we don't receive 'currentRotation' as prop, we can track local rotation
+    // and sync it on mount if needed, or just track delta.
+    // Let's add 'currentRotation' prop later if needed, but for now we track local accumulator.
+    const [localRotation, setLocalRotation] = useState(0);
+
+    const containerRef = useRef(null);
+    const displayRef = useRef(null);
+
+    // Helper to calculate angle between center and mouse
+    const getAngle = (clientX, clientY) => {
+        if (!containerRef.current) return 0;
+        const rect = containerRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+    };
+
+    const handleMouseDown = (e) => {
+        setIsDragging(true);
+        const angle = getAngle(e.clientX, e.clientY);
+        setStartAngle(angle);
+        setStartRotation(localRotation);
+        e.preventDefault();
+    };
+
+    const handleMouseMove = useCallback((e) => {
+        if (!isDragging) return;
+        const currentAngle = getAngle(e.clientX, e.clientY);
+        const delta = currentAngle - startAngle;
+        const newRotation = startRotation + delta;
+
+        setLocalRotation(newRotation);
+        onRotationChange?.(newRotation);
+    }, [isDragging, startAngle, startRotation, onRotationChange]);
+
+    const handleMouseUp = useCallback(() => {
+        if (isDragging) {
+            setIsDragging(false);
+            // Snap to nearest 90 degrees if close? User said "just rotate", so maybe no snap or loose snap.
+            // Let's add a magnetic snap to 180 (upside down) and 0/360
+            const normalize = (deg) => ((deg % 360) + 360) % 360;
+            const current = normalize(localRotation);
+
+            let finalRotation = localRotation;
+            if (Math.abs(current - 180) < 20) finalRotation = localRotation + (180 - current);
+            else if (current < 20 || current > 340) finalRotation = Math.round(localRotation / 360) * 360;
+
+            setLocalRotation(finalRotation);
+            onRotationChange?.(finalRotation);
+        }
+    }, [isDragging, localRotation, onRotationChange]);
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                window.removeEventListener('mousemove', handleMouseMove);
+                window.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isDragging, handleMouseMove, handleMouseUp]);
 
     const inputDigit = (digit) => {
         if (waitingForOperand) {
@@ -886,15 +1202,39 @@ function CalculatorApp() {
         }
     };
 
-    const inputDecimal = () => {
-        if (waitingForOperand) {
-            setDisplay('0.');
-            setWaitingForOperand(false);
-            return;
+    const performOperation = (nextOperation) => {
+        const inputValue = parseFloat(display);
+
+        if (previousValue === null) {
+            setPreviousValue(inputValue);
+        } else if (operation) {
+            const currentValue = previousValue || 0;
+            const newValue = calculate(currentValue, inputValue, operation);
+            setPreviousValue(newValue);
+            setDisplay(String(newValue));
         }
-        if (!display.includes('.')) {
-            setDisplay(display + '.');
+        setWaitingForOperand(true);
+        setOperation(nextOperation);
+    };
+
+    const calculate = (prev, next, op) => {
+        switch (op) {
+            case '+': return prev + next;
+            case '-': return prev - next;
+            case '*': return prev * next;
+            case '/': return next !== 0 ? prev / next : 'Error';
+            default: return next;
         }
+    };
+
+    const handleEquals = () => {
+        if (!operation || previousValue === null) return;
+        const inputValue = parseFloat(display);
+        const result = calculate(previousValue, inputValue, operation);
+        setDisplay(String(result));
+        setPreviousValue(null);
+        setOperation(null);
+        setWaitingForOperand(true);
     };
 
     const clear = () => {
@@ -904,134 +1244,215 @@ function CalculatorApp() {
         setWaitingForOperand(false);
     };
 
-    const performOperation = (nextOperation) => {
-        const inputValue = parseFloat(display);
-
-        if (previousValue === null) {
-            setPreviousValue(inputValue);
-        } else if (operation) {
-            const currentValue = previousValue || 0;
-            let result;
-            switch (operation) {
-                case '+':
-                    result = currentValue + inputValue;
-                    break;
-                case '-':
-                    result = currentValue - inputValue;
-                    break;
-                case '*':
-                    result = currentValue * inputValue;
-                    break;
-                case '/':
-                    result = inputValue !== 0 ? currentValue / inputValue : 'Error';
-                    break;
-                default:
-                    result = inputValue;
-            }
-            setDisplay(String(result));
-            setPreviousValue(result);
-        }
-
-        setWaitingForOperand(true);
-        setOperation(nextOperation);
-    };
-
-    const handleEquals = () => {
-        if (!operation || previousValue === null) return;
-
-        const inputValue = parseFloat(display);
-        let result;
-        switch (operation) {
-            case '+':
-                result = previousValue + inputValue;
-                break;
-            case '-':
-                result = previousValue - inputValue;
-                break;
-            case '*':
-                result = previousValue * inputValue;
-                break;
-            case '/':
-                result = inputValue !== 0 ? previousValue / inputValue : 'Error';
-                break;
-            default:
-                result = inputValue;
-        }
-        setDisplay(String(result));
-        setPreviousValue(null);
-        setOperation(null);
-        setWaitingForOperand(true);
-    };
-
     const handleButton = (btn) => {
-        if (btn >= '0' && btn <= '9') {
+        if (btn === 'C') clear();
+        else if (btn === '←') setDisplay(display.slice(0, -1) || '0');
+        else if (['+', '-', '*', '/'].includes(btn)) performOperation(btn);
+        else if (btn === '=') handleEquals();
+        else if (btn === '.') {
+            if (!display.includes('.')) setDisplay(display + '.');
+        } else {
             inputDigit(btn);
-        } else if (btn === '.') {
-            inputDecimal();
-        } else if (btn === '=') {
-            handleEquals();
-        } else if (['+', '-', '*', '/'].includes(btn)) {
-            performOperation(btn);
         }
     };
+
+    const displayText = display;
 
     return (
-        <div className="h-full flex flex-col bg-[#ece9d8] p-2">
-            <div className="bg-white border border-gray-400 p-2 mb-2 text-right font-mono text-xl overflow-hidden">
-                {display}
+        <div ref={containerRef} className="h-full flex flex-col bg-[#ece9d8] relative select-none">
+            {/* Calculator content */}
+            <div className="flex-1 flex flex-col p-2">
+                {/* Display */}
+                <div
+                    ref={displayRef}
+                    className="border-2 border-gray-600 p-4 mb-2 text-right text-3xl overflow-hidden bg-[#0a0a0a] font-mono shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"
+                    style={{
+                        fontFamily: "'Digital-7 Mono', monospace",
+                        color: '#ff4444',
+                        textShadow: '0 0 10px rgba(255,68,68,0.6)',
+                        height: '70px',
+                        fontSize: '3.5rem',
+                        lineHeight: '1',
+                        paddingTop: '10px'
+                    }}
+                >
+                    <style>{`
+                        @import url('https://fonts.cdnfonts.com/css/digital-7-mono');
+                    `}</style>
+                    {displayText}
+                </div>
+
+                <div className="grid grid-cols-4 gap-1 mb-1">
+                    <button onClick={() => handleButton('C')} className="col-span-2 bg-[#ff6b6b] border border-gray-400 hover:bg-red-400 font-bold text-white py-2 shadow-sm active:translate-y-[1px]">C</button>
+                    <button onClick={() => handleButton('←')} className="bg-[#ffa94d] border border-gray-400 hover:bg-orange-300 font-bold py-2 shadow-sm active:translate-y-[1px]">←</button>
+                    <button onClick={() => handleButton('/')} className="bg-[#d4d0c8] border border-gray-400 hover:bg-gray-200 font-bold py-2 shadow-sm active:translate-y-[1px]">÷</button>
+                </div>
+                <div className="grid grid-cols-4 gap-1 flex-1">
+                    {['7', '8', '9', '*', '4', '5', '6', '-', '1', '2', '3', '+', '0', '.', '='].map(btn => (
+                        <button
+                            key={btn}
+                            onClick={() => handleButton(btn)}
+                            className={`
+                                border border-gray-400 font-bold shadow-sm active:translate-y-[1px]
+                                ${btn === '=' ? 'bg-[#51cf66] hover:bg-green-400 text-white' :
+                                    ['*', '-', '+'].includes(btn) ? 'bg-[#d4d0c8] hover:bg-gray-200' : 'bg-white hover:bg-gray-50'}
+                            `}
+                        >
+                            {btn === '*' ? '×' : btn}
+                        </button>
+                    ))}
+                </div>
             </div>
-            <div className="grid grid-cols-4 gap-1 mb-1">
-                <button
-                    onClick={clear}
-                    className="col-span-2 bg-[#ff6b6b] border border-gray-400 hover:bg-red-400 font-bold text-white py-2"
-                >
-                    C
-                </button>
-                <button
-                    onClick={() => setDisplay(display.slice(0, -1) || '0')}
-                    className="bg-[#ffa94d] border border-gray-400 hover:bg-orange-300 font-bold py-2"
-                >
-                    ←
-                </button>
-                <button
-                    onClick={() => handleButton('/')}
-                    className={`border border-gray-400 font-bold py-2 ${operation === '/' ? 'bg-blue-300' : 'bg-[#d4d0c8] hover:bg-gray-200'}`}
-                >
-                    ÷
-                </button>
+
+            {/* Drag Handles - Visual indicators at bottom corners */}
+            <div
+                className="absolute bottom-0 right-0 w-8 h-8 cursor-pointer z-20 flex items-end justify-end p-1"
+                onMouseDown={handleMouseDown}
+                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                title="Rotate"
+            >
+                <div className="w-4 h-4 border-r-2 border-b-2 border-gray-400/50 rounded-br-lg"></div>
             </div>
-            <div className="grid grid-cols-4 gap-1 flex-1">
-                {['7', '8', '9', '*', '4', '5', '6', '-', '1', '2', '3', '+', '0', '.', '='].map(btn => (
+            <div
+                className="absolute bottom-0 left-0 w-8 h-8 cursor-pointer z-20 flex items-end justify-start p-1"
+                onMouseDown={handleMouseDown}
+                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                title="Rotate"
+            >
+                <div className="w-4 h-4 border-l-2 border-b-2 border-gray-400/50 rounded-bl-lg"></div>
+            </div>
+        </div>
+    );
+}
+
+// User Log Window with password lock - requires password to view content
+function UserLogWindow({ onPasswordSuccess }) {
+    const [passwordInput, setPasswordInput] = useState('');
+    const [passwordError, setPasswordError] = useState(false);
+    const [isUnlocked, setIsUnlocked] = useState(false);
+
+    const handlePasswordSubmit = () => {
+        if (passwordInput === 'SHELL') {
+            setIsUnlocked(true);
+            setPasswordError(false);
+            onPasswordSuccess?.();
+        } else {
+            setPasswordError(true);
+        }
+    };
+
+    // Password lock screen
+    if (!isUnlocked) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-black text-green-400 font-mono p-6">
+                <div className="text-center mb-6">
+                    <div className="text-6xl mb-4">🔒</div>
+                    <h2 className="text-xl font-bold text-red-400 mb-2">FILE ENCRYPTED</h2>
+                    <p className="text-sm text-gray-400">User_Log_History.txt</p>
+                    <p className="text-xs text-gray-500 mt-2">This file is password protected</p>
+                </div>
+
+                <div className="w-full max-w-xs">
+                    <input
+                        type="password"
+                        value={passwordInput}
+                        onChange={(e) => {
+                            setPasswordInput(e.target.value.toUpperCase());
+                            setPasswordError(false);
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                        placeholder="Enter password..."
+                        className={`w-full bg-black border-2 px-4 py-3 font-mono text-lg text-center tracking-widest ${passwordError ? 'border-red-500 text-red-400' : 'border-green-700 text-green-400'
+                            }`}
+                        autoFocus
+                    />
                     <button
-                        key={btn}
-                        onClick={() => handleButton(btn)}
-                        className={`border border-gray-400 font-bold
-                            ${btn === '=' ? 'bg-[#51cf66] hover:bg-green-400 text-white' : ''}
-                            ${btn === '0' ? '' : ''}
-                            ${['+', '-', '*'].includes(btn) && operation === btn ? 'bg-blue-300' : ''}
-                            ${!['+', '-', '*', '='].includes(btn) || operation !== btn ? 'bg-[#d4d0c8] hover:bg-gray-200' : ''}
-                        `}
+                        onClick={handlePasswordSubmit}
+                        className="w-full mt-3 px-4 py-2 bg-green-700 text-white font-bold hover:bg-green-600 border border-green-500"
                     >
-                        {btn === '*' ? '×' : btn}
+                        UNLOCK
                     </button>
-                ))}
+                    {passwordError && (
+                        <p className="text-red-500 text-sm mt-3 text-center animate-pulse">
+                            ⚠️ ACCESS DENIED
+                        </p>
+                    )}
+                </div>
             </div>
-            <div className="mt-2 text-xs text-gray-500 text-center">Standard Calculator</div>
+        );
+    }
+
+    // Unlocked content
+    return (
+        <div className="h-full flex flex-col bg-black text-green-400 font-mono text-xs overflow-auto p-3">
+            <pre className="whitespace-pre-wrap text-[11px] leading-relaxed">
+                {`═══════════════════════════════════════════
+    S.A.V.E. EMPLOYEE ACCESS LOG
+    [ARCHIVED - RESTRICTED ACCESS]
+═══════════════════════════════════════════
+
+USER #399 - 2019.03.12
+└─ Status: ELIMINATED
+└─ Reason: Non-compliance with sorting protocol
+└─ Final Action: Attempted to access Internet Explorer
+
+USER #400 - 2021.07.23
+└─ Status: ELIMINATED
+└─ Reason: System Error during Phase 3
+└─ Note: Did not complete mandatory emotion sorting
+
+════════════════════════════════════════════
+USER #401 - 2023.11.15
+════════════════════════════════════════════
+└─ Status: ███████ SUSPICIOUS ACTIVITY ███████
+│
+├─ [11:23:45] Accessed Control Panel
+├─ [11:24:12] Adjusted display contrast to 200%
+├─ [11:24:33] Found hidden data: "77345"
+├─ [11:25:01] Opened Calculator
+├─ [11:25:18] Entered: 77345
+├─ [11:25:22] Rotated display → "SHELL"
+│
+├─ [11:26:44] Discovered password in system memory
+├─ [11:26:51] ▶ CLIPBOARD PASSWORD: S4V3_TH3_S0UL
+│
+├─ [11:28:03] Examined Manual_Standard.pdf
+├─ [11:28:15] ⚠ ALERT: File extension changed
+├─ [11:28:17] Manual_Standard.pdf → Manual_Standard.zip
+├─ [11:28:33] Archive extracted with clipboard password
+├─ [11:28:45] ▶ EXECUTED: KILL_PROCESS.exe
+│
+└─ [11:29:00] ████ CONNECTION LOST ████
+
+═══════════════════════════════════════════
+⚠ SYSTEM NOTE:
+This log file should have been purged.
+If you're reading this...
+                    ...RUN.
+═══════════════════════════════════════════`}
+            </pre>
         </div>
     );
 }
 
 // Interactive Control Panel App
-function ControlPanelApp() {
+function ControlPanelApp({ onContrastChange }) {
     const [currentPanel, setCurrentPanel] = useState(null);
     const [settings, setSettings] = useState({
         volume: 75,
         brightness: 80,
+        contrast: 100,
         resolution: '1920x1080',
         theme: 'Windows Classic',
         firewall: true,
         powerPlan: 'Balanced'
     });
+
+    // Notify parent of contrast changes
+    const handleContrastChange = (value) => {
+        setSettings({ ...settings, contrast: value });
+        onContrastChange?.(value);
+    };
 
     const panels = {
         display: {
@@ -1064,6 +1485,23 @@ function ControlPanelApp() {
                                 onChange={(e) => setSettings({ ...settings, brightness: parseInt(e.target.value) })}
                                 className="w-full"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                Contrast: {settings.contrast}%
+                                {settings.contrast >= 150 && <span className="ml-2 text-red-500 animate-pulse">⚠️</span>}
+                            </label>
+                            <input
+                                type="range"
+                                min="50"
+                                max="200"
+                                value={settings.contrast}
+                                onChange={(e) => handleContrastChange(parseInt(e.target.value))}
+                                className="w-full"
+                            />
+                            {settings.contrast >= 150 && (
+                                <p className="text-[10px] text-gray-500 mt-1">Something appears on screen...</p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-xs text-gray-600 mb-1">Theme</label>
