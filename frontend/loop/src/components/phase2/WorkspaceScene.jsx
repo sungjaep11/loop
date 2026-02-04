@@ -41,6 +41,9 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
     // Phase 4: Elimination animation (when user drags own photo to eliminate)
     const [isEliminating, setIsEliminating] = useState(false);
 
+    // Glitch/Crash transition state
+    const [isCrashing, setIsCrashing] = useState(false);
+
     const setScene = useGameStore((s) => s.setScene);
     const incrementProcessed = useGameStore((s) => s.incrementProcessed);
     const capturedPhoto = usePlayerStore((s) => s.capturedPhoto);
@@ -263,13 +266,17 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         if (nextIndex < filesQueue.length) {
             const nextFile = filesQueue[nextIndex];
 
-            // MODIFIED: If next file is the webcam trigger (Phase 4), CRASH IMMEDIATELY.
-            // Do not show the file. Do not pass Go.
+            // MODIFIED: If next file is the webcam trigger (Phase 4), CRASH with glitch effect.
             if (nextFile.type === 'webcam') {
                 setCurrentFile(null); // Clear current file to avoid flickering
+                setIsCrashing(true); // Trigger glitch overlay
+
+                // Play error sound if available
+                playSFX?.('error');
+
                 setTimeout(() => {
                     onComplete(); // Go to InvestigationDesktop (Blue Screen)
-                }, 500); // Tiny delay for smooth transition after the override animation
+                }, 2500); // Longer delay to show glitch effect
                 return;
             }
 
@@ -498,6 +505,137 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                                             💀
                                         </motion.div>
                                     </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Glitch Crash Overlay for Phase 4 transition */}
+                        <AnimatePresence>
+                            {isCrashing && (
+                                <motion.div
+                                    className="absolute inset-0 z-[100] pointer-events-none overflow-hidden"
+                                    initial={{ opacity: 0 }}
+                                    animate={{
+                                        opacity: 1,
+                                        x: [0, -10, 8, -6, 4, -2, 0],
+                                        y: [0, 5, -8, 4, -3, 2, 0],
+                                    }}
+                                    transition={{
+                                        opacity: { duration: 0.1 },
+                                        x: { duration: 0.5, repeat: 4 },
+                                        y: { duration: 0.5, repeat: 4 },
+                                    }}
+                                >
+                                    {/* Red/Purple vignette flash */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-br from-red-900/80 via-purple-900/60 to-red-900/80"
+                                        animate={{ opacity: [0, 0.8, 0.4, 0.9, 0.5, 0.8] }}
+                                        transition={{ duration: 2, times: [0, 0.1, 0.3, 0.5, 0.7, 1] }}
+                                    />
+
+                                    {/* Scan lines */}
+                                    <motion.div
+                                        className="absolute inset-0 opacity-60"
+                                        style={{
+                                            background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)',
+                                        }}
+                                        animate={{ y: [0, 8] }}
+                                        transition={{ duration: 0.1, repeat: Infinity }}
+                                    />
+
+                                    {/* Horizontal glitch bars */}
+                                    <motion.div
+                                        className="absolute left-0 right-0 h-8 bg-cyan-500/30"
+                                        style={{ top: '20%' }}
+                                        animate={{
+                                            x: [-100, 100, -50, 0],
+                                            opacity: [0, 1, 1, 0],
+                                            scaleY: [1, 2, 0.5, 1],
+                                        }}
+                                        transition={{ duration: 0.3, repeat: 6, repeatDelay: 0.1 }}
+                                    />
+                                    <motion.div
+                                        className="absolute left-0 right-0 h-4 bg-red-500/40"
+                                        style={{ top: '60%' }}
+                                        animate={{
+                                            x: [100, -100, 50, 0],
+                                            opacity: [0, 1, 1, 0],
+                                        }}
+                                        transition={{ duration: 0.2, repeat: 8, repeatDelay: 0.05 }}
+                                    />
+                                    <motion.div
+                                        className="absolute left-0 right-0 h-12 bg-purple-500/30"
+                                        style={{ top: '80%' }}
+                                        animate={{
+                                            x: [-50, 80, -30, 0],
+                                            opacity: [0, 0.8, 0.8, 0],
+                                        }}
+                                        transition={{ duration: 0.25, repeat: 7, repeatDelay: 0.08 }}
+                                    />
+
+                                    {/* Glitch text */}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <motion.div
+                                            className="relative"
+                                            initial={{ scale: 0.8, opacity: 0 }}
+                                            animate={{
+                                                scale: [0.8, 1.1, 1],
+                                                opacity: [0, 1, 1],
+                                                x: [0, -5, 3, -2, 0],
+                                            }}
+                                            transition={{ duration: 0.5, delay: 0.3 }}
+                                        >
+                                            <p
+                                                className="text-4xl md:text-6xl font-black text-white tracking-widest"
+                                                style={{
+                                                    textShadow: '4px 0 0 rgba(0,255,255,0.7), -4px 0 0 rgba(255,0,0,0.7), 0 0 30px rgba(255,0,0,0.8)',
+                                                }}
+                                            >
+                                                CRITICAL ERROR
+                                            </p>
+                                            {/* RGB split effect */}
+                                            <motion.p
+                                                className="absolute top-0 left-0 text-4xl md:text-6xl font-black text-cyan-400 tracking-widest opacity-50"
+                                                animate={{ x: [-2, 2, -1, 0] }}
+                                                transition={{ duration: 0.1, repeat: Infinity }}
+                                                style={{ clipPath: 'inset(0 0 50% 0)' }}
+                                            >
+                                                CRITICAL ERROR
+                                            </motion.p>
+                                        </motion.div>
+
+                                        <motion.p
+                                            className="mt-6 text-lg md:text-xl font-mono text-red-300"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: [0, 1, 0.8], y: 0 }}
+                                            transition={{ delay: 0.8, duration: 0.5 }}
+                                        >
+                                            MEMORY CORRUPTION DETECTED
+                                        </motion.p>
+
+                                        <motion.div
+                                            className="mt-4 flex gap-2"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 1.2 }}
+                                        >
+                                            {[0, 1, 2].map((i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    className="w-3 h-3 rounded-full bg-red-500"
+                                                    animate={{
+                                                        scale: [1, 1.5, 1],
+                                                        opacity: [0.5, 1, 0.5],
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.6,
+                                                        repeat: Infinity,
+                                                        delay: i * 0.2,
+                                                    }}
+                                                />
+                                            ))}
+                                        </motion.div>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
