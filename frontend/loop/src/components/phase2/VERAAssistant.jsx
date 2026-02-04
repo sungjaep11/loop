@@ -33,19 +33,62 @@ export function VERAAssistant({ message, onMessageComplete }) {
     const [isTyping, setIsTyping] = useState(false);
     const [displayedMessage, setDisplayedMessage] = useState(null);
 
+    const lastSpokenText = React.useRef(null);
+
     useEffect(() => {
         if (message) {
             setIsTyping(true);
             setDisplayedMessage(message);
+
+            // TTS Implementation
+            const speak = () => {
+                // Prevent duplicate speaking of the same active message
+                if (lastSpokenText.current === message.text) return;
+                lastSpokenText.current = message.text;
+
+                const utterance = new SpeechSynthesisUtterance(message.text);
+                const voices = window.speechSynthesis.getVoices();
+                // Try to find a robotic/female voice
+                const voice = voices.find(v =>
+                    v.name.includes('Google US English') ||
+                    v.name.includes('Samantha') ||
+                    v.name.includes('Zira')
+                ) || voices[0];
+
+                if (voice) utterance.voice = voice;
+                utterance.pitch = 1.0;
+                utterance.rate = 1.1; // Slightly faster for AI feel
+                utterance.volume = 0.8;
+
+                window.speechSynthesis.cancel(); // Clears queue
+                window.speechSynthesis.speak(utterance);
+            };
+
+            // Voices loading is async in some browsers
+            if (window.speechSynthesis.getVoices().length === 0) {
+                // Use a one-time listener to avoid accumulation
+                const onVoicesChanged = () => {
+                    speak();
+                    window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+                };
+                window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+            } else {
+                speak();
+            }
 
             const duration = message.duration || 3000;
             if (duration > 0) {
                 const timer = setTimeout(() => {
                     setIsTyping(false);
                     onMessageComplete?.();
+                    lastSpokenText.current = null; // Reset allows same text to be spoken later if needed
                 }, duration);
                 return () => clearTimeout(timer);
             }
+        } else {
+            // Cancel speech if message is cleared immediately (optional safety)
+            window.speechSynthesis.cancel();
+            lastSpokenText.current = null;
         }
     }, [message, onMessageComplete]);
 
@@ -117,22 +160,10 @@ export function VERAAssistant({ message, onMessageComplete }) {
                     }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                    {/* Eye icon */}
-                    <motion.span
-                        className="text-2xl mb-1"
-                        animate={{
-                            scale: isTyping ? [1, 1.1, 1] : 1,
-                            filter: isTyping
-                                ? ['brightness(1)', 'brightness(1.3)', 'brightness(1)']
-                                : 'brightness(0.8)',
-                        }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
-                    >
-                        👁️
-                    </motion.span>
-
-                    {/* Waveform under eye */}
-                    <AudioWaveform isActive={isTyping} />
+                    {/* Centered Waveform */}
+                    <div className="flex items-center justify-center h-full w-full px-3">
+                        <AudioWaveform isActive={isTyping} />
+                    </div>
                 </motion.div>
             </div>
 

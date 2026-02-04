@@ -9,7 +9,7 @@ const bootLines = [
     { text: '', delay: 600 },
     { text: '┌─────────────────────────────────────────────┐', delay: 800 },
     { text: '│                                             │', delay: 900 },
-    { text: '│   SYSTEM DATE: 2026.01.30                   │', delay: 1000 },
+    { text: `│   SYSTEM DATE: ${new Date().toISOString().slice(0, 10).replace(/-/g, '.')}                   │`, delay: 1000 },
     { text: '│   TERMINAL: WS-1987-402                     │', delay: 1100 },
     { text: '│   LOCATION: ARCHIVE CENTER, FLOOR 7         │', delay: 1200 },
     { text: '│                                             │', delay: 1300 },
@@ -106,26 +106,26 @@ const BootSequence = ({ onComplete }) => {
 
                     {/* Loading bar - disappears 1s after reaching 100% so button shifts up */}
                     <AnimatePresence>
-                    {loadingProgress > 0 && showProgressBar && (
-                        <motion.div
-                            key="progress-bar"
-                            style={{ marginBottom: '2rem' }}
-                            initial={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: 'hidden' }}
-                            transition={{ duration: 0.35, ease: 'easeOut' }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <span>[</span>
-                                <div style={{ flex: 1, height: '16px', background: '#16213e', border: '1px solid #00ff41', position: 'relative' }}>
-                                    <motion.div
-                                        style={{ height: '100%', background: '#00ff41', width: `${loadingProgress}%` }}
-                                    />
+                        {loadingProgress > 0 && showProgressBar && (
+                            <motion.div
+                                key="progress-bar"
+                                style={{ marginBottom: '2rem' }}
+                                initial={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: 'hidden' }}
+                                transition={{ duration: 0.35, ease: 'easeOut' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span>[</span>
+                                    <div style={{ flex: 1, height: '16px', background: '#16213e', border: '1px solid #00ff41', position: 'relative' }}>
+                                        <motion.div
+                                            style={{ height: '100%', background: '#00ff41', width: `${loadingProgress}%` }}
+                                        />
+                                    </div>
+                                    <span>]</span>
+                                    <span>{loadingProgress}%</span>
                                 </div>
-                                <span>]</span>
-                                <span>{loadingProgress}%</span>
-                            </div>
-                        </motion.div>
-                    )}
+                            </motion.div>
+                        )}
                     </AnimatePresence>
 
                     {/* Complete message */}
