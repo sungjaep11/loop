@@ -8,10 +8,11 @@ const FILE_IMAGES = {
     'img3': 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop', // Coffee
 };
 
-export function RecycleBin({ files, onViewProperties, onOpenFile }) {
+export function RecycleBin({ files, onViewProperties, onRestoreFile }) {
     const [selectedFile, setSelectedFile] = useState(null);
     const [showProps, setShowProps] = useState(null); // fileId for properties dialog (right-click)
     const [showImage, setShowImage] = useState(null); // fileId for image viewer (left-click/double-click)
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(null); // fileId for restore confirmation
 
     // Right-click: show properties with secret info
     const openProperties = (fileId) => {
@@ -24,11 +25,18 @@ export function RecycleBin({ files, onViewProperties, onOpenFile }) {
         if (file.type === 'image') {
             // Image files: open in image viewer
             setShowImage(file.id);
-        } else if (file.type === 'text' || file.type === 'file') {
-            // Text/File types (memo, manual): restore and open
-            onOpenFile?.(file.id);
+        } else if (file.restorable) {
+            // Restorable files: show restore confirmation
+            setShowRestoreConfirm(file.id);
         }
     };
+
+    const handleRestore = (fileId) => {
+        onRestoreFile?.(fileId);
+        setShowRestoreConfirm(null);
+    };
+
+    if (!files || !Array.isArray(files)) return <div className="p-4 text-red-500">Error: No files data</div>;
 
     return (
         <div className="h-full w-full bg-white flex flex-col font-sans text-xs">
@@ -80,6 +88,55 @@ export function RecycleBin({ files, onViewProperties, onOpenFile }) {
                         file={files.find(f => f.id === showProps)}
                         onClose={() => setShowProps(null)}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Restore Confirmation Dialog */}
+            <AnimatePresence>
+                {showRestoreConfirm && (
+                    <motion.div
+                        className="absolute inset-0 bg-black/50 flex items-center justify-center z-50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="bg-[#ece9d8] border-2 border-[#0055ea] rounded-t-lg shadow-2xl w-80"
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.9 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="h-7 bg-gradient-to-r from-[#0058ee] to-[#3f96fe] flex items-center px-2 text-white font-bold text-sm rounded-t">
+                                Restore File
+                            </div>
+                            <div className="p-4 text-black">
+                                <div className="flex items-start gap-3 mb-4">
+                                    <span className="text-3xl">♻️</span>
+                                    <div>
+                                        <p className="font-bold mb-1">Restore this file to desktop?</p>
+                                        <p className="text-xs text-gray-600">
+                                            "{files.find(f => f.id === showRestoreConfirm)?.name}" will be moved to the desktop.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        onClick={() => handleRestore(showRestoreConfirm)}
+                                        className="px-4 py-1 bg-[#d4d0c8] border border-gray-400 hover:bg-gray-200 text-sm font-bold rounded"
+                                    >
+                                        Restore
+                                    </button>
+                                    <button
+                                        onClick={() => setShowRestoreConfirm(null)}
+                                        className="px-4 py-1 bg-[#d4d0c8] border border-gray-400 hover:bg-gray-200 text-sm rounded"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
