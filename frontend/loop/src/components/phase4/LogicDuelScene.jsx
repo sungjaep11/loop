@@ -32,7 +32,10 @@ export function LogicDuelScene() {
     const lastFrameRef = useRef(performance.now());
     const laserIdRef = useRef(0);
     const bulletIdRef = useRef(0);
+    const videoRef = useRef(null);
+    const streamRef = useRef(null);
 
+    const [webcamActive, setWebcamActive] = useState(false);
     const [gauge, setGauge] = useState(0);
     const [lasers, setLasers] = useState([]);
     const [bullets, setBullets] = useState([]);
@@ -66,6 +69,37 @@ export function LogicDuelScene() {
         }, LASER_SPAWN_INTERVAL);
         return () => clearInterval(id);
     }, [won]);
+
+    // Webcam initialization
+    useEffect(() => {
+        const startWebcam = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 320, height: 240, facingMode: 'user' },
+                    audio: false
+                });
+                streamRef.current = stream;
+                setWebcamActive(true);
+            } catch (err) {
+                console.log('Webcam not available:', err);
+                setWebcamActive(false);
+            }
+        };
+        startWebcam();
+        return () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
+
+    // Attach stream to video element when it appears
+    useEffect(() => {
+        if (webcamActive && videoRef.current && streamRef.current) {
+            videoRef.current.srcObject = streamRef.current;
+        }
+    }, [webcamActive]);
+
 
     // Turrets shoot bullets toward current mouse
     useEffect(() => {
@@ -218,10 +252,10 @@ export function LogicDuelScene() {
                 <div className="text-red-400/70 mt-0.5">Avoid lasers & bullets. Click UPLOAD to install.</div>
             </div>
 
-            {/* KILL_PROCESS gauge - top right */}
-            <div className="absolute top-4 right-4 z-[200] font-mono text-xs text-right">
+            {/* KILL_PROCESS gauge - moved to center top */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[200] font-mono text-xs text-center">
                 <div className="text-cyan-400/90 mb-1">KILL_PROCESS.exe</div>
-                <div className="w-36 h-3 bg-black/70 border border-red-500/60 rounded overflow-hidden">
+                <div className="w-64 h-3 bg-black/70 border border-red-500/60 rounded overflow-hidden">
                     <motion.div
                         className="h-full bg-red-600"
                         style={{ width: `${Math.min(100, gauge)}%` }}
@@ -230,6 +264,79 @@ export function LogicDuelScene() {
                 </div>
                 <span className="text-red-400/90">{Math.round(gauge)}%</span>
             </div>
+
+            {/* Creepy Webcam + System Info "I Know Everything" Effect */}
+            <AnimatePresence>
+                {webcamActive && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ delay: 0.3, duration: 0.8 }}
+                        className="absolute top-4 right-4 z-[300] pointer-events-none"
+                    >
+                        <motion.div
+                            className="relative rounded-xl overflow-hidden bg-black/90 border border-red-500/50"
+                            animate={{
+                                boxShadow: [
+                                    '0 0 20px rgba(220,38,38,0.3)',
+                                    '0 0 40px rgba(220,38,38,0.5)',
+                                    '0 0 20px rgba(220,38,38,0.3)',
+                                ]
+                            }}
+                            transition={{ duration: 2.5, repeat: Infinity }}
+                        >
+                            {/* Header */}
+                            <div className="px-3 py-1.5 bg-red-950/80 border-b border-red-900/60 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <motion.div
+                                        className="w-2 h-2 rounded-full bg-red-500"
+                                        animate={{ opacity: [1, 0.3, 1] }}
+                                        transition={{ duration: 1, repeat: Infinity }}
+                                    />
+                                    <span className="text-red-400 text-[10px] font-mono tracking-wider">LIVE FEED</span>
+                                </div>
+                                <span className="text-red-500/70 text-[9px] font-mono">{new Date().toLocaleTimeString()}</span>
+                            </div>
+
+                            {/* Video */}
+                            <div className="relative">
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className="w-56 h-40 object-cover"
+                                    style={{ transform: 'scaleX(-1)', filter: 'grayscale(20%) contrast(1.1) brightness(1.0)' }}
+                                />
+                                {/* Scanlines */}
+                                <div
+                                    className="absolute inset-0 pointer-events-none opacity-15"
+                                    style={{ background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,0,0,0.1) 2px, rgba(255,0,0,0.1) 3px)' }}
+                                />
+                                {/* Overlay text */}
+                                <motion.div
+                                    className="absolute inset-0 flex items-center justify-center"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: [0, 1, 0] }}
+                                    transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
+                                >
+                                    <span className="text-red-500 text-xs font-mono tracking-widest drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]">TARGET IDENTIFIED</span>
+                                </motion.div>
+                            </div>
+
+                            {/* System Info */}
+                            <div className="px-3 py-2 bg-black/80 border-t border-red-900/40 font-mono text-[9px] text-red-400/80 space-y-0.5">
+                                <div className="flex justify-between"><span className="text-red-500/60">OS:</span><span>{navigator.platform}</span></div>
+                                <div className="flex justify-between"><span className="text-red-500/60">RES:</span><span>{window.screen.width}x{window.screen.height}</span></div>
+                                <motion.div className="flex justify-between text-red-400" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                                    <span className="text-red-500">STATUS:</span><span>INTERCEPTING...</span>
+                                </motion.div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Center: UPLOAD button (fill gauge) + EXECUTE when ready */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 text-center pointer-events-none">
