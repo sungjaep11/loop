@@ -2,9 +2,11 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { EmotionFile } from './EmotionFile';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import { getPhaseByFileId } from '../../data/emotionFiles';
 
-function DropZone({ id, label, color, accentColor, icon, isActive, isEliminate }) {
+function DropZone({ id, label, color, accentColor, Icon, isActive, isEliminate }) {
     const { setNodeRef, isOver } = useDroppable({ id });
     const isEliminateHover = isEliminate && isOver;
 
@@ -13,17 +15,18 @@ function DropZone({ id, label, color, accentColor, icon, isActive, isEliminate }
             ref={setNodeRef}
             className={`
                 w-32 h-full flex items-center justify-center relative overflow-hidden
-                rounded-2xl backdrop-blur-md border transition-all duration-300
+                rounded-2xl backdrop-blur-md border-[1.5px] transition-all duration-300
                 ${isEliminate ? 'animate-pulse' : ''}
             `}
             style={{
                 background: isOver
-                    ? `linear-gradient(135deg, ${color}40 0%, ${color}20 100%)`
-                    : `linear-gradient(135deg, ${color}15 0%, ${color}08 100%)`,
-                borderColor: isOver ? `${accentColor}80` : `${accentColor}30`,
+                    ? `linear-gradient(135deg, ${color}30 0%, ${color}10 100%)`
+                    : `linear-gradient(135deg, ${color}10 0%, ${color}05 100%)`,
+                borderColor: isOver ? `${accentColor}80` : `${accentColor}20`,
                 boxShadow: isOver
-                    ? `0 0 40px ${color}30, inset 0 0 30px ${color}10`
-                    : `0 0 20px ${color}10`,
+                    ? `0 0 30px ${color}20, inset 0 0 20px ${color}10`
+                    : `0 0 10px ${color}05`,
+                borderStyle: isEliminate ? 'dashed' : 'solid'
             }}
             animate={isEliminateHover ? {
                 scale: [1, 1.02, 1.01],
@@ -32,6 +35,9 @@ function DropZone({ id, label, color, accentColor, icon, isActive, isEliminate }
                     `0 0 60px ${color}50`,
                     `0 0 40px ${color}40`
                 ],
+            } : isOver ? {
+                scale: 1.02,
+                boxShadow: `0 0 40px ${color}30, inset 0 0 30px ${color}10`
             } : {}}
             transition={{ duration: 0.4, repeat: isEliminateHover ? Infinity : 0 }}
         >
@@ -73,28 +79,28 @@ function DropZone({ id, label, color, accentColor, icon, isActive, isEliminate }
 
             {/* Content */}
             <motion.div
-                className={`text-center relative z-10 transition-all duration-300 ${isOver ? 'opacity-100' : 'opacity-60'}`}
+                className={`text-center relative z-10 transition-all duration-300 ${isOver ? 'opacity-100' : 'opacity-60'} flex flex-col items-center gap-3`}
                 animate={isEliminateHover
                     ? { scale: [1, 1.1, 1.05], x: [0, -2, 2, 0] }
-                    : isOver ? { scale: 1.05 } : {}
+                    : isOver ? { scale: 1.1 } : {}
                 }
                 transition={isEliminateHover ? { duration: 0.5, repeat: Infinity } : { duration: 0.3 }}
             >
-                <motion.div
-                    className={`text-5xl mb-3 drop-shadow-lg ${isEliminate ? 'animate-bounce' : ''}`}
-                    style={{ filter: isOver ? `drop-shadow(0 0 10px ${accentColor})` : 'none' }}
-                >
-                    {icon}
-                </motion.div>
                 <div
-                    className="text-xs font-bold tracking-[0.15em] uppercase"
+                    className={`drop-shadow-lg ${isEliminate ? 'animate-bounce' : ''}`}
+                    style={{ filter: isOver ? `drop-shadow(0 0 15px ${accentColor})` : 'none' }}
+                >
+                    <Icon className="w-12 h-12" style={{ color: accentColor }} />
+                </div>
+                <div
+                    className="text-[10px] font-bold tracking-[0.2em] uppercase"
                     style={{ color: accentColor }}
                 >
                     {label}
                 </div>
                 {isEliminateHover && (
                     <motion.div
-                        className="mt-3 text-[10px] font-bold text-red-300 uppercase tracking-wider"
+                        className="text-[9px] font-bold text-red-300 uppercase tracking-wider"
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: [0.8, 1, 0.8], y: 0 }}
                         transition={{ duration: 0.5, repeat: Infinity }}
@@ -108,7 +114,7 @@ function DropZone({ id, label, color, accentColor, icon, isActive, isEliminate }
             <AnimatePresence>
                 {isOver && !isEliminateHover && (
                     <motion.div
-                        className="absolute inset-4 border-2 rounded-xl pointer-events-none"
+                        className="absolute inset-2 border rounded-xl pointer-events-none"
                         style={{ borderColor: `${accentColor}50` }}
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -163,7 +169,7 @@ export function FileProcessor({ file, isActive, showTutorial, webcamImage, isEli
                 label={isEliminateMode ? "ELIMINATE" : "NEGATIVE"}
                 color={isEliminateMode ? "#7F1D1D" : "#EF4444"}
                 accentColor={isEliminateMode ? "#FF6B6B" : "#F87171"}
-                icon={isEliminateMode ? "💀" : "👎"}
+                Icon={isEliminateMode ? ExclamationTriangleIcon : HandThumbDownIcon}
                 isActive={isActive}
                 isEliminate={isEliminateMode}
             />
@@ -197,21 +203,45 @@ export function FileProcessor({ file, isActive, showTutorial, webcamImage, isEli
                     )}
                 </AnimatePresence>
 
-                {/* Tutorial/Instruction Overlays */}
+                {/* Tutorial/Instruction Overlays with Ghost Hand */}
                 {file && (
-                    <div className="absolute -bottom-14 left-0 right-0 text-center">
+                    <div className="absolute -bottom-14 left-0 right-0 text-center pointer-events-none">
                         <motion.div
                             className={`inline-block px-5 py-2.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm border ${isEliminateMode
-                                    ? 'bg-red-900/60 text-red-100 border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.3)]'
-                                    : phase >= 2
-                                        ? 'bg-purple-900/60 text-purple-100 border-purple-500/50 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
-                                        : 'bg-cyan-900/60 text-cyan-100 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]'
+                                ? 'bg-red-900/60 text-red-100 border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.3)]'
+                                : phase >= 2
+                                    ? 'bg-purple-900/60 text-purple-100 border-purple-500/50 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
+                                    : 'bg-cyan-900/60 text-cyan-100 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]'
                                 }`}
                             animate={isEliminateMode ? { scale: [1, 1.03, 1] } : {}}
                             transition={{ duration: 0.5, repeat: Infinity }}
                         >
                             {getTutorialText()}
                         </motion.div>
+
+                        {/* Visual Ghost Hand Guide */}
+                        {showTutorial && !isEliminateMode && (
+                            <motion.div
+                                className="absolute left-1/2 bottom-12 pointer-events-none z-50 text-white drop-shadow-[0_0_10px_rgba(0,255,255,0.8)]"
+                                initial={{ opacity: 0, x: '-50%', y: 0 }}
+                                animate={{
+                                    opacity: [0, 1, 1, 0, 0],
+                                    x: ['-50%', '-150%', '-50%', '50%', '-50%'], // Center -> Left -> Center -> Right -> Center
+                                    y: [0, -20, 0, -20, 0],
+                                    rotate: [0, -10, 0, 10, 0]
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    times: [0, 0.2, 0.4, 0.6, 0.8],
+                                    repeatDelay: 0.5
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.257l-1.59-1.59" />
+                                </svg>
+                            </motion.div>
+                        )}
                     </div>
                 )}
             </div>
@@ -222,7 +252,7 @@ export function FileProcessor({ file, isActive, showTutorial, webcamImage, isEli
                 label="POSITIVE"
                 color="#10B981"
                 accentColor="#34D399"
-                icon="👍"
+                Icon={HandThumbUpIcon}
                 isActive={isActive}
             />
         </div>

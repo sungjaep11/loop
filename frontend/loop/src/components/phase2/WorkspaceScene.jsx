@@ -11,6 +11,8 @@ import { FileProcessor } from './FileProcessor';
 import { OutputPanels } from './OutputPanels';
 import { MetricsPanel } from './MetricsPanel';
 import { EmployeeCard } from '../ui/EmployeeCard';
+import { HandThumbUpIcon, HandThumbDownIcon, SkullIcon, FingerPrintIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import {
     allEmotionFiles,
     resetFiles,
@@ -19,13 +21,40 @@ import {
 } from '../../data/emotionFiles';
 
 export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
+    const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+    const [efficiency, setEfficiency] = useState(98.2);
+    const [accuracy, setAccuracy] = useState(100.0);
+
     const [currentFile, setCurrentFile] = useState(null);
     const [currentFileIndex, setCurrentFileIndex] = useState(0);
     const [activeId, setActiveId] = useState(null);
+    const [positiveCount, setPositiveCount] = useState(0);
+    const [negativeCount, setNegativeCount] = useState(0);
+    const [errorCount, setErrorCount] = useState(0);
     const [veraMessage, setVeraMessage] = useState(null);
     const [filesQueue, setFilesQueue] = useState([]);
     const [processedCount, setProcessedCount] = useState(0);
     const [currentPhase, setCurrentPhase] = useState(1);
+
+    useEffect(() => {
+        // Calculate accuracy based on errors vs total attempts
+        if (processedCount > 0) {
+            const rawAccuracy = ((processedCount - errorCount) / processedCount) * 100;
+            setAccuracy(Math.max(0, Math.min(100, rawAccuracy)));
+        }
+    }, [processedCount, errorCount]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+            // Live Update Metrics - Jitter efficiency slightly to look alive
+            setEfficiency(prev => {
+                const change = (Math.random() - 0.5) * 0.1;
+                return Math.min(99.9, Math.max(97.0, prev + change));
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     // V.E.R.A. override state
     const [isOverriding, setIsOverriding] = useState(false);
@@ -46,6 +75,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
 
     const setScene = useGameStore((s) => s.setScene);
     const incrementProcessed = useGameStore((s) => s.incrementProcessed);
+    const complianceScore = useGameStore((s) => s.complianceScore || 100);
     const capturedPhoto = usePlayerStore((s) => s.capturedPhoto);
     const playSFX = useAudioStore((s) => s.playSFX);
     const playAmbient = useAudioStore((s) => s.playAmbient);
@@ -188,6 +218,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             if (playerChoice === expectedChoice) {
                 // V.E.R.A. OVERRIDE!
                 setIsOverriding(true);
+                setErrorCount(prev => prev + 1);
                 playSFX('error');
 
                 setVeraMessage({
@@ -253,6 +284,10 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 type: 'success'
             });
         }
+
+        // Increment stats
+        if (action === 'positive') setPositiveCount(prev => prev + 1);
+        if (action === 'negative') setNegativeCount(prev => prev + 1);
 
         moveToNextFile();
         setActiveId(null);
@@ -383,7 +418,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 <div className="flex items-center gap-6 text-xs text-gray-400 font-mono">
                     <span className="flex items-center gap-1.5">
                         <span className="text-cyan-500">◷</span>
-                        {mode === 'recovery' ? '09:00' : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {mode === 'recovery' ? '09:00' : currentTime}
                     </span>
                     <span className="flex items-center gap-1.5">
                         <span className="text-cyan-500">◈</span>
@@ -517,19 +552,19 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                                     initial={{ opacity: 0 }}
                                     animate={{
                                         opacity: 1,
-                                        x: [0, -10, 8, -6, 4, -2, 0],
-                                        y: [0, 5, -8, 4, -3, 2, 0],
+                                        x: [0, -2, 2, -1, 1, 0],
+                                        y: [0, 1, -1, 0],
                                     }}
                                     transition={{
-                                        opacity: { duration: 0.1 },
-                                        x: { duration: 0.5, repeat: 4 },
-                                        y: { duration: 0.5, repeat: 4 },
+                                        opacity: { duration: 0.2 },
+                                        x: { duration: 0.8, repeat: 2 },
+                                        y: { duration: 0.8, repeat: 2 },
                                     }}
                                 >
-                                    {/* Red/Purple vignette flash */}
+                                    {/* Red/Purple vignette flash - Toned down */}
                                     <motion.div
-                                        className="absolute inset-0 bg-gradient-to-br from-red-900/80 via-purple-900/60 to-red-900/80"
-                                        animate={{ opacity: [0, 0.8, 0.4, 0.9, 0.5, 0.8] }}
+                                        className="absolute inset-0 bg-gradient-to-br from-red-900/60 via-purple-900/40 to-red-900/60"
+                                        animate={{ opacity: [0, 0.4, 0.2, 0.5, 0.3, 0.4] }}
                                         transition={{ duration: 2, times: [0, 0.1, 0.3, 0.5, 0.7, 1] }}
                                     />
 
@@ -588,16 +623,16 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                                             <p
                                                 className="text-4xl md:text-6xl font-black text-white tracking-widest"
                                                 style={{
-                                                    textShadow: '4px 0 0 rgba(0,255,255,0.7), -4px 0 0 rgba(255,0,0,0.7), 0 0 30px rgba(255,0,0,0.8)',
+                                                    textShadow: '2px 0 0 rgba(0,255,255,0.4), -2px 0 0 rgba(255,0,0,0.4), 0 0 15px rgba(255,0,0,0.5)',
                                                 }}
                                             >
                                                 CRITICAL ERROR
                                             </p>
                                             {/* RGB split effect */}
                                             <motion.p
-                                                className="absolute top-0 left-0 text-4xl md:text-6xl font-black text-cyan-400 tracking-widest opacity-50"
-                                                animate={{ x: [-2, 2, -1, 0] }}
-                                                transition={{ duration: 0.1, repeat: Infinity }}
+                                                className="absolute top-0 left-0 text-4xl md:text-6xl font-black text-cyan-400 tracking-widest opacity-30"
+                                                animate={{ x: [-1, 1, 0] }}
+                                                transition={{ duration: 0.2, repeat: Infinity }}
                                                 style={{ clipPath: 'inset(0 0 50% 0)' }}
                                             >
                                                 CRITICAL ERROR
@@ -642,8 +677,8 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                     </main>
 
                     <aside className="w-72 bg-slate-900/60 backdrop-blur-md p-5 flex flex-col gap-5 border-l border-cyan-500/10 relative">
-                        <OutputPanels />
-                        <MetricsPanel />
+                        <OutputPanels approvedCount={positiveCount} heldCount={negativeCount} />
+                        <MetricsPanel efficiency={efficiency} accuracy={accuracy} compliance={complianceScore} />
 
                         <AnimatePresence>
                             {showTerminationOption && (

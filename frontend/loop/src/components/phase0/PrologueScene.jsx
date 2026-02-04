@@ -7,6 +7,15 @@ export function PrologueScene({ onComplete }) {
     const playSFX = useAudioStore((s) => s.playSFX);
     const playAmbient = useAudioStore((s) => s.playAmbient);
 
+    const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+
+    React.useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date().toLocaleTimeString());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     React.useEffect(() => {
         playAmbient('fluorescentHum');
     }, []);
@@ -28,31 +37,60 @@ export function PrologueScene({ onComplete }) {
                     {/* Fake Email Client Interface */}
                     <div className="border-b border-gray-700 pb-2 mb-4 flex justify-between items-center bg-[#111] p-2 rounded">
                         <span className="font-bold text-white">Inbox (1)</span>
-                        <span className="text-xs text-gray-500">{new Date().toLocaleTimeString()}</span>
+                        <span className="text-xs text-gray-500">{currentTime}</span>
                     </div>
 
                     {/* Email List Item */}
                     {!emailOpen && (
-                        <motion.div
-                            className="bg-[#222] p-4 rounded border-l-4 border-neogen-accent cursor-pointer hover:bg-[#2a2a2a] transition-colors"
-                            onClick={() => {
-                                setEmailOpen(true);
-                                playSFX('click');
-                            }}
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 1 }}
-                            whileHover={{ scale: 1.02 }}
-                        >
-                            <div className="flex justify-between mb-1">
-                                <span className="font-bold text-white">S.A.V.E. Recruiting</span>
-                                <span className="text-xs text-gray-400">Just Now</span>
-                            </div>
-                            <div className="font-bold text-neogen-accent mb-1">Shape the Future with Us - Job Offer</div>
-                            <div className="text-sm text-gray-500 truncate">
-                                Dear Candidate, We are pleased to inform you that you have been selected...
-                            </div>
-                        </motion.div>
+                        <div className="space-y-2">
+                            {/* Main Unread Email */}
+                            <motion.div
+                                className="bg-[#222] p-4 rounded border-l-4 border-neogen-accent cursor-pointer hover:bg-[#2a2a2a] transition-colors"
+                                onClick={() => {
+                                    setEmailOpen(true);
+                                    playSFX('click');
+                                }}
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1 }}
+                                whileHover={{ scale: 1.02 }}
+                            >
+                                <div className="flex justify-between mb-1">
+                                    <span className="font-bold text-white">S.A.V.E. Recruiting</span>
+                                    <span className="text-xs text-gray-400">Just Now</span>
+                                </div>
+                                <div className="font-bold text-neogen-accent mb-1">Shape the Future with Us - Job Offer</div>
+                                <div className="text-sm text-gray-500 truncate">
+                                    Dear Candidate, We are pleased to inform you that you have been selected...
+                                </div>
+                            </motion.div>
+
+                            {/* Dummy Read Emails */}
+                            {[
+                                { sender: "S.A.V.E. HR", subject: "Application Received - Reference #402", time: "Yesterday", preview: "Your application has been successfully submitted to our database." },
+                                { sender: "Tech News Daily", subject: "The Rise of Pattern Recognition AI", time: "2 days ago", preview: "New algorithms are changing how we process vast archives of data..." },
+                                { sender: "Account Security", subject: "Login Attempt Blocked", time: "3 days ago", preview: "We noticed an unusual login attempt from a new location." },
+                                { sender: "Cloud Storage", subject: "Your subscription is expiring soon", time: "Last Week", preview: "Please update your payment method to avoid service interruption." },
+                                { sender: "S.A.V.E. Newsletter", subject: "Weekly Internal Updates", time: "Last Week", preview: "Updates on the new archive protocol and data safety measures." }
+                            ].map((mail, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    className="bg-[#1a1a1a] p-3 rounded border-l-4 border-transparent opacity-60 hover:opacity-80 transition-opacity"
+                                    initial={{ x: -20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 0.6 }}
+                                    transition={{ delay: 1 + (idx * 0.1) }}
+                                >
+                                    <div className="flex justify-between mb-1">
+                                        <span className="font-medium text-gray-400">{mail.sender}</span>
+                                        <span className="text-xs text-gray-600">{mail.time}</span>
+                                    </div>
+                                    <div className="text-gray-500 text-sm mb-1 truncate">{mail.subject}</div>
+                                    <div className="text-xs text-gray-700 truncate">
+                                        {mail.preview}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
                     )}
 
                     {/* Open Email view */}

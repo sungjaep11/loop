@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export function OutputPanels() {
+export function OutputPanels({ approvedCount = 0, heldCount = 0 }) {
     return (
         <div className="flex flex-col gap-4">
             {/* Approved Zone Stat */}
@@ -14,7 +14,7 @@ export function OutputPanels() {
                     <span className="text-[9px] text-gray-600 font-mono">POSITIVE</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-2xl text-green-400 font-mono font-bold">--</span>
+                    <span className="text-2xl text-green-400 font-mono font-bold animate-pulse">{approvedCount}</span>
                     <span className="text-[10px] text-gray-600">entries</span>
                 </div>
             </div>
@@ -29,7 +29,7 @@ export function OutputPanels() {
                     <span className="text-[9px] text-gray-600 font-mono">NEGATIVE</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-2xl text-yellow-400 font-mono font-bold">--</span>
+                    <span className="text-2xl text-yellow-400 font-mono font-bold animate-pulse">{heldCount}</span>
                     <span className="text-[10px] text-gray-600">entries</span>
                 </div>
             </div>
