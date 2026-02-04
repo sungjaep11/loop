@@ -126,9 +126,19 @@ export default function Home() {
         <div className="h-8 flex flex-shrink-0 justify-end items-center px-4 pt-2">
           {/* 컨트롤 패널 */}
           <div className="flex items-center gap-6">
-            {/* 메뉴 버튼들 */}
+            {/* 메뉴 버튼들 - 첫 번째 버튼: 마지막 페이지로 복귀 */}
             <div className="flex gap-3">
-              <div className="w-6 h-2 rounded-full bg-[#b0b0b0] shadow-[inset_1px_1px_1px_rgba(0,0,0,0.3)]"></div>
+              <button
+                type="button"
+                onClick={() => {
+                  // Update cache bust to force iframe reload
+                  cacheBustRef.current = Date.now();
+                  setLoopAppOpen(false);
+                  setTimeout(() => setLoopAppOpen(true), 100);
+                }}
+                className="w-6 h-2 rounded-full bg-[#b0b0b0] shadow-[inset_1px_1px_1px_rgba(0,0,0,0.3)] hover:bg-[#00ff41] hover:shadow-[0_0_8px_#00ff41] active:bg-[#00aa2e] transition-all cursor-pointer"
+                title="Resume from last session"
+              ></button>
               <div className="w-6 h-2 rounded-full bg-[#b0b0b0] shadow-[inset_1px_1px_1px_rgba(0,0,0,0.3)]"></div>
               <div className="w-6 h-2 rounded-full bg-[#b0b0b0] shadow-[inset_1px_1px_1px_rgba(0,0,0,0.3)]"></div>
             </div>

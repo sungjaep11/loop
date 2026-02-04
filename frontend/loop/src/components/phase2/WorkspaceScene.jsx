@@ -94,32 +94,42 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         }
     }, [mode, playAmbient]);
 
-    // Handle Phase 4 webcam
+    // Handle Phase 4 webcam (Self-elimination) - MODIFIED: Auto-crash sequence
     useEffect(() => {
         if (currentFile && currentFile.type === 'webcam') {
             setWebcamImage(capturedPhoto);
             setIsEliminateMode(true);
 
-            // V.E.R.A. dramatic reveal
+            // 1. Reveal V.E.R.A. analysis
             setTimeout(() => {
                 setVeraMessage({
-                    text: "Analyzing subject...",
-                    duration: 2000,
+                    text: "Subject identified. Employee #402.",
+                    duration: 3000,
                     type: 'warning'
                 });
             }, 1000);
 
+            // 2. Simulate System Crash / Memory Leak (Interrupting the process)
             setTimeout(() => {
+                // Play error sound
+                playSFX('error');
+
+                // Show critical error message
                 setVeraMessage({
-                    text: currentFile.veraMessage,
-                    duration: 1000,
+                    text: "CRITICAL ALERT: MEMORY CORRUPTION DETECTED.",
+                    duration: 2000,
                     type: 'error'
                 });
-            }, 3500);
+            }, 4000);
+
+            // 3. Force transition to Investigation Desktop (The Crash)
+            setTimeout(() => {
+                onComplete();
+            }, 6000);
         } else {
             setIsEliminateMode(false);
         }
-    }, [currentFile, capturedPhoto]);
+    }, [currentFile, capturedPhoto, playSFX, onComplete]);
 
     // Auto-approve logic for recovery mode
     useEffect(() => {
@@ -251,10 +261,21 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         incrementProcessed();
 
         if (nextIndex < filesQueue.length) {
+            const nextFile = filesQueue[nextIndex];
+
+            // MODIFIED: If next file is the webcam trigger (Phase 4), CRASH IMMEDIATELY.
+            // Do not show the file. Do not pass Go.
+            if (nextFile.type === 'webcam') {
+                setCurrentFile(null); // Clear current file to avoid flickering
+                setTimeout(() => {
+                    onComplete(); // Go to InvestigationDesktop (Blue Screen)
+                }, 500); // Tiny delay for smooth transition after the override animation
+                return;
+            }
+
             setCurrentFile(null);
             setTimeout(() => {
                 setCurrentFileIndex(nextIndex);
-                const nextFile = filesQueue[nextIndex];
                 setCurrentFile(nextFile);
 
                 const nextPhase = getPhaseByFileId(nextFile.id);
@@ -322,8 +343,8 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             {currentPhase >= 2 && (
                 <motion.div
                     className={`absolute top-0 left-0 right-0 h-1 ${currentPhase === 2 ? 'bg-yellow-500' :
-                            currentPhase === 3 ? 'bg-orange-500' :
-                                'bg-red-600'
+                        currentPhase === 3 ? 'bg-orange-500' :
+                            'bg-red-600'
                         }`}
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
@@ -332,31 +353,45 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             )}
 
             {/* Header bar */}
-            <header className="bg-gray-900 px-6 py-3 flex items-center justify-between border-b border-gray-800 z-10">
-                <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-white tracking-widest">S.A.V.E.</span>
-                    <span className="text-xs text-gray-500 uppercase">
+            <header className="bg-slate-900/90 backdrop-blur-md px-6 py-3 flex items-center justify-between border-b border-cyan-500/20 z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse shadow-[0_0_8px_rgba(0,255,255,0.5)]" />
+                        <span className="text-lg font-bold text-cyan-400 tracking-[0.2em] font-mono">S.A.V.E.</span>
+                    </div>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">
                         Emotion Classification System v9.4 {mode === 'recovery' ? '(RECOVERED)' : ''}
                     </span>
                     {currentPhase > 1 && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${currentPhase === 2 ? 'bg-yellow-500 text-black' :
-                                currentPhase === 3 ? 'bg-orange-500' :
-                                    'bg-red-600 animate-pulse'
+                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${currentPhase === 2
+                            ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                            : currentPhase === 3
+                                ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                                : 'bg-red-500/20 text-red-300 border-red-500/30 animate-pulse'
                             }`}>
                             PHASE {currentPhase}
                         </span>
                     )}
                 </div>
                 <div className="flex items-center gap-6 text-xs text-gray-400 font-mono">
-                    <span>🕐 {mode === 'recovery' ? '09:00 AM' : new Date().toLocaleTimeString()}</span>
-                    <span>📊 {processedCount}/{filesQueue.length}</span>
-                    <span>☕ Break in: {mode === 'recovery' ? '∞' : '2h 00m'}</span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="text-cyan-500">◷</span>
+                        {mode === 'recovery' ? '09:00' : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="text-cyan-500">◈</span>
+                        {processedCount}/{filesQueue.length}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="text-gray-600">⏱</span>
+                        Break: {mode === 'recovery' ? '∞' : '2h:00m'}
+                    </span>
                 </div>
             </header>
 
             <div className="flex-1 flex overflow-hidden z-10 relative">
                 <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                    <aside className="w-72 bg-gray-900/50 p-6 flex flex-col gap-6 border-r border-gray-800 backdrop-blur-sm">
+                    <aside className="w-72 bg-slate-900/60 backdrop-blur-md p-5 flex flex-col gap-5 border-r border-cyan-500/10">
                         <InboxPanel totalFiles={filesQueue.length} processedCount={processedCount} />
                         <VERAAssistant message={veraMessage} onMessageComplete={() => setVeraMessage(null)} />
                     </aside>
@@ -468,7 +503,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                         </AnimatePresence>
                     </main>
 
-                    <aside className="w-72 bg-gray-900/50 p-6 flex flex-col gap-6 border-l border-gray-800 backdrop-blur-sm relative">
+                    <aside className="w-72 bg-slate-900/60 backdrop-blur-md p-5 flex flex-col gap-5 border-l border-cyan-500/10 relative">
                         <OutputPanels />
                         <MetricsPanel />
 

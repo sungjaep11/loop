@@ -79,7 +79,7 @@ export function VirtualDesktop({ onComplete }) {
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
                             <DesktopIcon
-                                icon="💀"
+                                icon="📦"
                                 label="workspace.exe"
                                 className="text-red-500"
                                 onClick={onComplete}

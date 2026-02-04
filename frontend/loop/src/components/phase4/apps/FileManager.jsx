@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const ARCHIVE_PASSWORD = 'S4V3_TH3_S0UL';
 
-export function FileManager({ file, onViewKillProcess }) {
+export function FileManager({ file, onViewKillProcess, clipboardPassword }) {
     const [isExtracted, setIsExtracted] = useState(false);
     const [selected, setSelected] = useState(null);
     const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
@@ -91,7 +91,12 @@ export function FileManager({ file, onViewKillProcess }) {
                     {isExtracted && (
                         <>
                             <div
-                                className="flex flex-col items-center gap-1 w-20 p-2 border border-transparent hover:bg-gray-100 rounded cursor-pointer"
+                                className="flex flex-col items-center gap-1 w-20 p-2 border border-transparent hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing"
+                                draggable
+                                onDragStart={(e) => {
+                                    e.dataTransfer.setData('text/plain', 'KILL_PROCESS');
+                                    e.dataTransfer.effectAllowed = 'move';
+                                }}
                                 onClick={() => onViewKillProcess?.()}
                             >
                                 <span className="text-4xl text-red-600">⚙️</span>
@@ -140,7 +145,14 @@ export function FileManager({ file, onViewKillProcess }) {
                             type="text"
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handlePasswordSubmit();
+                                // Handle Ctrl+V to paste from game clipboard
+                                if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardPassword) {
+                                    e.preventDefault();
+                                    setPasswordInput(clipboardPassword);
+                                }
+                            }}
                             className="w-full border border-gray-400 px-2 py-1 rounded font-mono mb-3"
                             placeholder="Password"
                             autoFocus
