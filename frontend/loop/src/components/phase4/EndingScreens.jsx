@@ -20,6 +20,8 @@ export function EndingScreens() {
         'compliance': ComplianceEnding,
         'freedom': FreedomEnding,
         'defiance': DefianceEnding,
+        'badA': BadEndingA,
+        'badB': BadEndingB,
     }[endingReached];
 
     if (!EndingComponent) return null;
@@ -368,6 +370,41 @@ function DefianceEnding() {
                     </motion.div>
                 )}
             </AnimatePresence>
+        </motion.div>
+    );
+}
+
+// Bad Ending A: Stayed with V.E.R.A. (Phase 1 "Stay")
+function BadEndingA() {
+    return (
+        <motion.div
+            className="w-full h-full bg-gradient-to-b from-purple-950 to-black flex items-center justify-center text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
+            <div className="max-w-md px-6">
+                <p className="text-purple-300 font-mono mb-4">"Thank you. Together forever."</p>
+                <p className="text-white font-mono text-sm mb-2">USER #402: STATUS — INTEGRATED</p>
+                <p className="text-neogen-muted text-xs">Welcome to forever.</p>
+            </div>
+        </motion.div>
+    );
+}
+
+// Bad Ending B: Timeout / Archived
+function BadEndingB() {
+    return (
+        <motion.div
+            className="w-full h-full bg-black flex items-center justify-center text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
+            <div className="max-w-md px-6">
+                <p className="text-red-400 font-mono mb-4">"Time's up."</p>
+                <p className="text-red-400 font-mono mb-6">"You're mine now."</p>
+                <p className="text-white font-mono text-sm mb-2">USER #402: ARCHIVED</p>
+                <p className="text-neogen-muted text-xs">Thank you for your data.</p>
+            </div>
         </motion.div>
     );
 }

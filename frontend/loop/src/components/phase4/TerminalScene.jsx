@@ -114,9 +114,9 @@ export function TerminalScene() {
         setIsProcessing(false);
         setCurrentInput('');
 
-        // Check for special commands
+        // Check for special commands: WAKE_UP -> The Logic Duel, then freedom
         if (command === 'WAKE_UP') {
-            setTimeout(() => setEnding('freedom'), response.length * 50 + 3000);
+            setTimeout(() => setScene('logicDuel'), response.length * 50 + 3000);
         }
     };
 
