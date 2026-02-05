@@ -66,6 +66,25 @@ export function DebugSceneSwitcher() {
                         <span>🖥️</span>
                         Jump to this screen (Investigation Desktop)
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (currentScene !== 'logicDuel') {
+                                setScene('logicDuel');
+                                // Wait for component to mount before triggering warp
+                                setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('debug-warp-logicduel'));
+                                }, 500);
+                            } else {
+                                window.dispatchEvent(new CustomEvent('debug-warp-logicduel'));
+                            }
+                            setIsVisible(false);
+                        }}
+                        className="mb-3 w-full px-3 py-2 bg-red-900/50 text-red-200 border border-red-500/50 rounded hover:bg-red-800/80 font-bold text-left flex items-center gap-2"
+                    >
+                        <span>💥</span>
+                        Warp to LogicDuel Ending (Phase 4)
+                    </button>
                     <div className="flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
                         {SCENES.map((scene) => (
                             <button

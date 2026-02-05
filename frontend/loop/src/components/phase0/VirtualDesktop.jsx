@@ -98,8 +98,8 @@ export function VirtualDesktop({ onComplete }) {
                         isActive={activeWindow === 'email'}
                         onClose={() => closeWindow('email')}
                         onFocus={() => setActiveWindow('email')}
-                        width={720}
-                        height={480}
+                        width={900}
+                        height={600}
                     >
                         <EmailApp onOpenLink={() => toggleWindow('browser')} />
                     </Window>
@@ -112,8 +112,8 @@ export function VirtualDesktop({ onComplete }) {
                         isActive={activeWindow === 'browser'}
                         onClose={() => closeWindow('browser')}
                         onFocus={() => setActiveWindow('browser')}
-                        width={720}
-                        height={480}
+                        width={900}
+                        height={600}
                     >
                         <BrowserApp onDownload={() => toggleWindow('installer')} />
                     </Window>

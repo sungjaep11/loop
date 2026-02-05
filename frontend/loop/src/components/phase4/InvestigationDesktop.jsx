@@ -6,8 +6,9 @@ import { RecycleBin } from './apps/RecycleBin';
 import { ClipboardViewer } from './apps/ClipboardViewer';
 import { MemoViewer } from './apps/MemoViewer';
 import { usePlayerStore } from '../../stores/playerStore';
+import { playElevenLabsTts } from '../../utils/elevenlabsTts';
 
-const DESKTOP_IDS_DELETION_ORDER = ['bin', 'calculator', 'notepad', 'ie', 'mydocs', 'controlpanel'];
+const DESKTOP_IDS_DELETION_ORDER = ['bin', 'calculator', 'notepad', 'ie', 'mydocs'];
 const KILL_PROCESS_COUNTDOWN_MS = 8000;
 const DELETION_INTERVAL_MS = 1800;
 
@@ -20,8 +21,7 @@ const INITIAL_FILES = {
         { id: 'ie', name: 'Internet Explorer', type: 'app', icon: '🌐', pos: { x: 5, y: 36 } },
         // Left column - row 2
         { id: 'calculator', name: 'Calculator', type: 'app', icon: '🧮', pos: { x: 5, y: 50 } },
-        { id: 'notepad', name: 'Notepad', type: 'app', icon: '📝', pos: { x: 5, y: 64 } },
-        { id: 'controlpanel', name: 'Control Panel', type: 'app', icon: '⚙️', pos: { x: 5, y: 78 } }
+        { id: 'notepad', name: 'Notepad', type: 'app', icon: '📝', pos: { x: 5, y: 64 } }
     ],
     'hidden': [
         // Hidden file only visible when "Show Hidden Files" is enabled
@@ -120,6 +120,26 @@ export function InvestigationDesktop({ onComplete }) {
         if (gameState === 'saved') return "CRITICAL ERROR... SYSTEM SHUTDOWN INITIATED...";
         return "";
     };
+
+    // V.E.R.A. TTS - play when message changes (interrupts previous for faster response)
+    const lastSpokenVeraRef = useRef(null);
+    const veraAbortRef = useRef(null);
+    const currentVeraMessage = getVeraMessage();
+
+    useEffect(() => {
+        if (!currentVeraMessage || currentVeraMessage === lastSpokenVeraRef.current) return;
+
+        // Abort previous TTS immediately and start new one
+        if (veraAbortRef.current) {
+            veraAbortRef.current.abort();
+        }
+
+        const ac = new AbortController();
+        veraAbortRef.current = ac;
+        lastSpokenVeraRef.current = currentVeraMessage;
+
+        playElevenLabsTts(currentVeraMessage, { signal: ac.signal }).catch(() => {});
+    }, [currentVeraMessage]);
 
     // View handler only used for internal state if needed, but drag is global
     const handleViewKillProcess = () => {
@@ -373,7 +393,7 @@ export function InvestigationDesktop({ onComplete }) {
                     )}
 
                     {windows.includes('memo') && (
-                        <Window id="memo" title="Memo.txt" onClose={() => closeWindow('memo')} isActive={activeWindow === 'memo'} onClick={() => setActiveWindow('memo')} width={400} height={300}>
+                        <Window id="memo" title="Memo.txt" onClose={() => closeWindow('memo')} isActive={activeWindow === 'memo'} onClick={() => setActiveWindow('memo')} width={550} height={450}>
                             <MemoViewer unlocked={memoUnlocked} />
                         </Window>
                     )}
@@ -389,7 +409,7 @@ export function InvestigationDesktop({ onComplete }) {
                     )}
 
                     {windows.includes('clipboard') && (
-                        <Window id="clipboard" title="Clipboard History" onClose={() => closeWindow('clipboard')} isActive={activeWindow === 'clipboard'} onClick={() => setActiveWindow('clipboard')} width={300} height={400}>
+                        <Window id="clipboard" title="Clipboard History" onClose={() => closeWindow('clipboard')} isActive={activeWindow === 'clipboard'} onClick={() => setActiveWindow('clipboard')} width={450} height={500}>
                             <ClipboardViewer history={clipboardHistory} />
                         </Window>
                     )}
@@ -402,8 +422,8 @@ export function InvestigationDesktop({ onComplete }) {
                             onClose={() => closeWindow('dummyCalculator')}
                             isActive={activeWindow === 'dummyCalculator'}
                             onClick={() => setActiveWindow('dummyCalculator')}
-                            width={280}
-                            height={380}
+                            width={350}
+                            height={450}
                             style={{
                                 rotate: calculatorRotation,
                                 transformOrigin: '50% 60%' // Pivot around Button 5
@@ -417,17 +437,17 @@ export function InvestigationDesktop({ onComplete }) {
                         </Window>
                     )}
                     {windows.includes('dummyNotepad') && (
-                        <Window id="dummyNotepad" title="Notepad" onClose={() => closeWindow('dummyNotepad')} isActive={activeWindow === 'dummyNotepad'} onClick={() => setActiveWindow('dummyNotepad')} width={400} height={300}>
+                        <Window id="dummyNotepad" title="Notepad" onClose={() => closeWindow('dummyNotepad')} isActive={activeWindow === 'dummyNotepad'} onClick={() => setActiveWindow('dummyNotepad')} width={550} height={450}>
                             <DummyApp type="notepad" />
                         </Window>
                     )}
                     {windows.includes('dummyIE') && (
-                        <Window id="dummyIE" title="Internet Explorer" onClose={() => closeWindow('dummyIE')} isActive={activeWindow === 'dummyIE'} onClick={() => setActiveWindow('dummyIE')} width={500} height={400}>
+                        <Window id="dummyIE" title="Internet Explorer" onClose={() => closeWindow('dummyIE')} isActive={activeWindow === 'dummyIE'} onClick={() => setActiveWindow('dummyIE')} width={700} height={550}>
                             <DummyApp type="ie" />
                         </Window>
                     )}
                     {windows.includes('dummyDocs') && (
-                        <Window id="dummyDocs" title="My Documents" onClose={() => closeWindow('dummyDocs')} isActive={activeWindow === 'dummyDocs'} onClick={() => setActiveWindow('dummyDocs')} width={500} height={400}>
+                        <Window id="dummyDocs" title="My Documents" onClose={() => closeWindow('dummyDocs')} isActive={activeWindow === 'dummyDocs'} onClick={() => setActiveWindow('dummyDocs')} width={700} height={550}>
                             <MyDocumentsApp
                                 restoredFiles={files.mydocs || []}
                                 onOpenMemo={() => {
@@ -457,14 +477,14 @@ export function InvestigationDesktop({ onComplete }) {
                     )}
 
                     {windows.includes('dummyControl') && (
-                        <Window id="dummyControl" title="Control Panel" onClose={() => closeWindow('dummyControl')} isActive={activeWindow === 'dummyControl'} onClick={() => setActiveWindow('dummyControl')} width={500} height={400}>
+                        <Window id="dummyControl" title="Control Panel" onClose={() => closeWindow('dummyControl')} isActive={activeWindow === 'dummyControl'} onClick={() => setActiveWindow('dummyControl')} width={650} height={500}>
                             <DummyApp type="controlpanel" onContrastChange={setScreenContrast} onBrightnessChange={setScreenBrightness} />
                         </Window>
                     )}
 
                     {/* Hidden User Log - reveals clue about password */}
                     {windows.includes('userLog') && (
-                        <Window id="userLog" title="User_Log_History.txt - [ARCHIVED]" onClose={() => closeWindow('userLog')} isActive={activeWindow === 'userLog'} onClick={() => setActiveWindow('userLog')} width={520} height={500}>
+                        <Window id="userLog" title="User_Log_History.txt - [ARCHIVED]" onClose={() => closeWindow('userLog')} isActive={activeWindow === 'userLog'} onClick={() => setActiveWindow('userLog')} width={650} height={550}>
                             <UserLogWindow onPasswordSuccess={() => {
                                 // User entered correct password - copy to clipboard
                                 setClipboardHistory(prev => ['S4V3_TH3_S0UL', ...prev]);
@@ -583,12 +603,12 @@ export function InvestigationDesktop({ onComplete }) {
             <AnimatePresence>
                 {(gameState === 'active' || gameState === 'caught') && veraMessage && (
                     <motion.div
-                        className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-4"
+                        className="absolute top-12 left-0 right-0 z-[1000] flex justify-center px-4"
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                     >
-                        <div className="bg-[#060809]/95 border-l-4 border-red-900/90 text-slate-200 p-4 rounded-sm shadow-[0_0_25px_rgba(80,0,0,0.25)] flex items-start gap-4 backdrop-blur-sm">
+                        <div className="bg-[#060809]/95 border-l-4 border-red-900/90 text-slate-200 p-4 rounded-sm shadow-[0_0_25px_rgba(80,0,0,0.25)] flex items-center gap-4 backdrop-blur-sm max-w-2xl w-full">
                             <div className="w-11 h-11 rounded-full bg-red-950/80 border border-red-900/70 flex items-center justify-center shrink-0">
                                 <span className="text-lg font-mono text-red-500/90">◇</span>
                             </div>
@@ -681,39 +701,85 @@ function DesktopIcon({ file, name, onDoubleClick, isDeleted, isHidden }) {
     );
 }
 
-function Window({ id, title, children, onClose, isActive, onClick, isModal, width = 600, height = 450, style }) {
+function Window({ id, title, children, onClose, isActive, onClick, isModal, width = 700, height = 550, style }) {
     // Extract rotate to ensure it's handled by animate, preventing conflict with drag transform
     const { rotate, ...restStyle } = style || {};
-    const dragControls = useDragControls();
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartPos = useRef({ x: 0, y: 0 });
+    const windowStartPos = useRef({ x: 0, y: 0 });
+
+    const handleMouseDown = (e) => {
+        if (isModal) return;
+        e.preventDefault();
+        onClick?.();
+        setIsDragging(true);
+        dragStartPos.current = { x: e.clientX, y: e.clientY };
+        windowStartPos.current = { x: position.x, y: position.y };
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handleMouseMove = (e) => {
+            const deltaX = e.clientX - dragStartPos.current.x;
+            const deltaY = e.clientY - dragStartPos.current.y;
+            setPosition({
+                x: windowStartPos.current.x + deltaX,
+                y: windowStartPos.current.y + deltaY
+            });
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging]);
+
+    const handleClose = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (onClose) onClose();
+    };
 
     return (
         <motion.div
             className={`absolute flex flex-col bg-[#ece9d8] border-[3px] border-[#0055ea] rounded-t-lg shadow-2xl overflow-hidden
             ${isActive ? 'z-50' : 'z-40 grayscale-[0.2]'}`}
             style={{
-                left: isModal ? '50%' : '100px', top: isModal ? '50%' : '50px',
-                width, height, x: isModal ? '-50%' : 0, y: isModal ? '-50%' : 0,
+                left: isModal ? '50%' : `calc(100px + ${position.x}px)`,
+                top: isModal ? '50%' : `calc(50px + ${position.y}px)`,
+                width, height,
+                transform: isModal ? 'translate(-50%, -50%)' : 'none',
                 ...restStyle
             }}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1, rotate: rotate || 0 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            drag={!isModal}
-            dragListener={false}
-            dragControls={dragControls}
-            dragMomentum={false}
             onPointerDown={onClick}
         >
-            {/* Title Bar */}
+            {/* Title Bar - draggable */}
             <div
-                className="h-8 bg-gradient-to-r from-[#0058ee] to-[#3f96fe] flex items-center justify-between px-2 text-white font-bold text-shadow-sm select-none cursor-default"
-                onPointerDown={(e) => {
-                    dragControls.start(e);
-                }}
+                className={`h-8 bg-gradient-to-r from-[#0058ee] to-[#3f96fe] flex items-center justify-between px-2 text-white font-bold text-shadow-sm select-none ${isModal ? 'cursor-default' : 'cursor-move'}`}
+                onMouseDown={handleMouseDown}
             >
                 <span className="flex items-center gap-2 text-sm">{title}</span>
                 <div className="flex gap-1">
-                    <button className="w-5 h-5 bg-[#d84030] rounded border border-white/50 hover:bg-[#ff5040] flex items-center justify-center font-normal" onClick={(e) => { e.stopPropagation(); onClose(); }}>×</button>
+                    <button
+                        type="button"
+                        className="w-6 h-6 bg-[#d84030] rounded border border-white/50 hover:bg-[#ff5040] active:bg-[#c03020] flex items-center justify-center cursor-pointer text-white text-sm font-bold leading-none"
+                        onClick={handleClose}
+                        onMouseDown={(e) => e.stopPropagation()}
+                    >
+                        ×
+                    </button>
                 </div>
             </div>
             {/* Content */}

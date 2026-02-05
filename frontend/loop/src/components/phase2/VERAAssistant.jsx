@@ -34,8 +34,11 @@ export function VERAAssistant({ message, onMessageComplete }) {
     const [isTyping, setIsTyping] = useState(false);
     const [displayedMessage, setDisplayedMessage] = useState(null);
     const lastSpokenRef = React.useRef(null);
+    const abortControllerRef = React.useRef(null);
+    const completedRef = React.useRef(false); // Prevent double completion
 
     // Same pattern as LogicDuelScene: playElevenLabsTts with AbortController, no unlock gate.
+    // Fixed for React StrictMode: don't abort on unmount, only on new message.
     useEffect(() => {
         if (!message || !message.text) {
             if (!message) lastSpokenRef.current = null;
@@ -44,27 +47,41 @@ export function VERAAssistant({ message, onMessageComplete }) {
 
         setIsTyping(true);
         setDisplayedMessage(message);
+        completedRef.current = false; // Reset for new message
 
         if (lastSpokenRef.current === message.text) return;
 
+        // Abort previous TTS if a new message comes in
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
         const ac = new AbortController();
+        abortControllerRef.current = ac;
+
         const maxWait = message.duration || 15000;
         const done = () => {
+            if (completedRef.current) return; // Prevent double completion
+            completedRef.current = true;
             setIsTyping(false);
             onMessageComplete?.();
         };
 
         lastSpokenRef.current = message.text;
-        // Same ElevenLabs API as LogicDuelScene; use VERA voice for consistency with WorkplaceScene
-        const VERA_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
-        playElevenLabsTts(message.text, { signal: ac.signal, voiceId: VERA_VOICE_ID })
+        // Same ElevenLabs API as LogicDuelScene - uses default voice from server (.env ELEVENLABS_VOICE_ID)
+        playElevenLabsTts(message.text, { signal: ac.signal })
             .then(done)
-            .catch(() => done());
+            .catch((err) => {
+                // TTS failed - don't advance immediately, let the timeout handle it
+                // This ensures minimum display time even when TTS is unavailable
+                console.warn('TTS failed:', err?.message || err);
+            });
 
         const t = setTimeout(done, maxWait);
         return () => {
-            ac.abort();
             clearTimeout(t);
+            // Don't abort here - React StrictMode causes double mount/unmount
+            // Abort only happens when a new message comes in (above)
         };
     }, [message, onMessageComplete]);
 

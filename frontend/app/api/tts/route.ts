@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         text,
-        model_id: "eleven_multilingual_v2",
+        model_id: "eleven_turbo_v2_5", // Faster model for lower latency
+        optimize_streaming_latency: 3, // 0-4, higher = lower latency
       }),
     });
 
