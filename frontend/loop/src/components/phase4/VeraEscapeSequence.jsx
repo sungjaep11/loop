@@ -62,6 +62,7 @@ const PHASE4_TAUNTS = ['Typo. I\'ll fix it for you.', 'Your hands are shaking. N
 
 export function VeraEscapeSequence() {
     const setEnding = useGameStore((s) => s.setEnding);
+    const setScene = useGameStore((s) => s.setScene);
     const playSFX = useAudioStore((s) => s.playSFX);
 
     const [phase, setPhase] = useState('confirm');
@@ -120,11 +121,15 @@ export function VeraEscapeSequence() {
     }, [veraLine]);
 
     // ——— Webcam for creepy "watching you" effect ———
+    // ——— Webcam for creepy "watching you" effect ———
+    // Persist webcam stream across phases to avoid black screen flickering
     useEffect(() => {
-        // Start webcam when entering phase1 (after initial confirmation)
-        if (phase !== 'phase1' && phase !== 'phase2_enter' && phase !== 'phase2_scare' && phase !== 'phase2_dont_touch' && phase !== 'phase2_mouse' && phase !== 'phase3' && phase !== 'phase4') {
-            return;
-        }
+        // Only trigger start if we are in an active phase (starting from phase1)
+        // and we haven't started yet.
+        const activePhases = ['phase1', 'phase2_enter', 'phase2_scare', 'phase2_dont_touch', 'phase2_mouse', 'phase3', 'phase4'];
+        if (!activePhases.includes(phase)) return;
+
+        if (streamRef.current) return; // Already started
 
         const startWebcam = async () => {
             try {
@@ -141,13 +146,16 @@ export function VeraEscapeSequence() {
         };
 
         startWebcam();
+    }, [phase]);
 
+    // Cleanup tracks ONLY on unmount
+    useEffect(() => {
         return () => {
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());
             }
         };
-    }, [phase]);
+    }, []);
 
     // Attach stream to video element when it appears
     useEffect(() => {
@@ -155,6 +163,34 @@ export function VeraEscapeSequence() {
             videoRef.current.srcObject = streamRef.current;
         }
     }, [webcamActive, phase]);
+
+    // ——— Debug Shortcut (Ctrl+Shift+L) & Custom Event ———
+    useEffect(() => {
+        const triggerWarp = () => {
+            console.log('DEBUG: Jumping to Phase 4');
+            setPhase('phase4');
+            setPasswordTimeLeft(PASSWORD_TIME_MS / 1000);
+            setProgress(95); // Nearly done
+            setPhase3Red(true); // Ensure red theme is active
+            setPasswordInput('');
+            setFinalPhase(null);
+        };
+
+        const handleDebugKey = (e) => {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+                triggerWarp();
+            }
+        };
+
+        const handleCustomEvent = () => triggerWarp();
+
+        window.addEventListener('keydown', handleDebugKey);
+        window.addEventListener('debug-warp-logicduel', handleCustomEvent);
+        return () => {
+            window.removeEventListener('keydown', handleDebugKey);
+            window.removeEventListener('debug-warp-logicduel', handleCustomEvent);
+        };
+    }, []);
 
     // ——— Phase 0: Confirm ———
     const handleConfirmRun = () => {
@@ -210,8 +246,8 @@ export function VeraEscapeSequence() {
 
     const handlePhase1Choice = (choice) => {
         if (choice === 'Stay') {
-            setFinalPhase('badA');
-            setTimeout(() => setEnding('badA'), 500);
+            // User trusts VERA - go to false normalcy (recovery mode)
+            setTimeout(() => setScene('false_normalcy'), 500);
             return;
         }
         if (choice === 'Leave anyway' || choice === "I'm done") {
@@ -569,10 +605,39 @@ export function VeraEscapeSequence() {
 
     const handlePasswordChange = (e) => {
         setPasswordInput(e.target.value);
-        if (e.target.value.toUpperCase() === PASSWORD) {
-            setProgress(100);
-            setFinalPhase('good');
-            setTimeout(() => setEnding('freedom'), 1500);
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        setPasswordInput('EXIT');
+        playSFX?.('click');
+    };
+
+    const handlePasswordKeyDown = async (e) => {
+        if (e.key === 'Enter') {
+            const val = passwordInput.toUpperCase();
+            if (val === PASSWORD || val === 'EXIT') {
+                // Trigger 'Break' effect logic
+                playSFX?.('error'); // Glitch sound
+                setGlitch(true);
+
+                // VERA's final screams (TTS) - Sequential & Blocking
+                try {
+                    await playElevenLabsTts('No... No!!! Stop it!!', { stability: 0.1, similarity_boost: 1.0 });
+                    await new Promise(r => setTimeout(r, 500)); // Pause between lines
+                    await playElevenLabsTts('Don\'t think... you have won...', { stability: 0.4, similarity_boost: 0.8 });
+                } catch (err) {
+                    // Fallback delay if TTS fails or throws (e.g. 402 error)
+                    await new Promise(r => setTimeout(r, 3000));
+                }
+
+                // Intense visual glitch before success
+                setProgress(100);
+                setFinalPhase('good');
+                setTimeout(() => setEnding('freedom'), 1000);
+            } else {
+                playSFX?.('error');
+            }
         }
     };
 
@@ -614,19 +679,28 @@ export function VeraEscapeSequence() {
                 <>
                     <div className="absolute inset-0 z-[60] pointer-events-none opacity-[0.03] bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,0,0,0.1)_2px,rgba(255,0,0,0.1)_4px)]" />
                     {glitch && (
-                        <motion.div
-                            className="absolute inset-0 z-[61] pointer-events-none bg-red-950/20"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: [0, 0.15, 0] }}
-                            transition={{ duration: 0.12 }}
-                        />
+                        <>
+                            <motion.div
+                                className="absolute inset-0 z-[61] pointer-events-none bg-red-600 mix-blend-overlay"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 0.8, 0, 0.9, 0] }}
+                                transition={{ duration: 0.15, repeat: Infinity }}
+                            />
+                            <motion.div
+                                className="absolute inset-0 z-[62] pointer-events-none bg-white mix-blend-difference"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 0.9, 0] }}
+                                transition={{ duration: 0.1, repeat: Infinity, repeatDelay: 0.05 }}
+                            />
+                        </>
                     )}
                 </>
             )}
 
             {/* Creepy Webcam + System Info — show whenever webcam is active (including after "target identified") */}
+            {/* Creepy Webcam + System Info — show starting from phase2_scare ("I will keep watching you") */}
             <AnimatePresence>
-                {webcamActive && !['confirm', 'progress'].includes(phase) && (
+                {webcamActive && !['confirm', 'progress', 'phase1', 'phase2_enter'].includes(phase) && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{
@@ -674,34 +748,14 @@ export function VeraEscapeSequence() {
                                     muted
                                     playsInline
                                     className="w-56 h-40 object-cover"
-                                    style={{ transform: 'scaleX(-1)', filter: 'grayscale(20%) contrast(1.1) brightness(1.0)' }}
+                                    style={{ transform: 'scaleX(-1)' }}
                                 />
 
-                                {/* Scanline overlay */}
-                                <div
-                                    className="absolute inset-0 pointer-events-none opacity-15"
-                                    style={{
-                                        background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,0,0,0.1) 2px, rgba(255,0,0,0.1) 3px)',
-                                    }}
-                                />
-
-                                {/* Corner markers */}
-                                <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-red-500/70" />
-                                <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-red-500/70" />
-                                <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500/70" />
-                                <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500/70" />
-
-                                {/* "TARGET IDENTIFIED" — subtle overlay so camera feed stays visible */}
-                                <motion.div
-                                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: [0, 0.5, 0] }}
-                                    transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
-                                >
-                                    <span className="text-red-500/90 text-xs font-mono tracking-widest drop-shadow-[0_0_10px_rgba(220,38,38,0.8)] bg-black/30 px-2 py-0.5 rounded">
-                                        TARGET IDENTIFIED
-                                    </span>
-                                </motion.div>
+                                {/* Corner markers - keeping these for minimal framing */}
+                                <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-red-500/40" />
+                                <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-red-500/40" />
+                                <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500/40" />
+                                <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500/40" />
                             </div>
 
                             {/* System Info */}
@@ -1103,6 +1157,8 @@ export function VeraEscapeSequence() {
                         type="text"
                         value={passwordInput}
                         onChange={handlePasswordChange}
+                        onKeyDown={handlePasswordKeyDown}
+                        onPaste={handlePaste}
                         className="bg-black/90 border-2 border-red-500/60 text-cyan-100 px-4 py-2 font-mono w-64 outline-none rounded placeholder-red-900/50"
                         placeholder="Enter password"
                         autoFocus

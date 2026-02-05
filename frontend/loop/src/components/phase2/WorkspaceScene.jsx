@@ -73,6 +73,11 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
     // Glitch/Crash transition state
     const [isCrashing, setIsCrashing] = useState(false);
 
+    // Recovery mode: step-based sequential flow
+    // Steps: 0=intro1, 1=intro2, 2=file1, 3=file2, 4=file3, 5=finale
+    const [recoveryStep, setRecoveryStep] = useState(0);
+    const recoveryStepRef = useRef(0); // To avoid stale closures
+
     const setScene = useGameStore((s) => s.setScene);
     const incrementProcessed = useGameStore((s) => s.incrementProcessed);
     const complianceScore = useGameStore((s) => s.complianceScore || 100);
@@ -84,20 +89,105 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
     useEffect(() => {
         let queue = mode === 'recovery' ? [...resetFiles] : [...allEmotionFiles];
         setFilesQueue(queue);
-        if (queue.length > 0) {
+        // For recovery mode, don't set currentFile here - step-based logic handles it
+        if (mode !== 'recovery' && queue.length > 0) {
             setCurrentFile(queue[0]);
             setCurrentPhase(getPhaseByFileId(queue[0].id));
         }
     }, [mode]);
 
-    // Start ambient and VERA intro messages on mount (same pattern as LogicDuelScene TTS on mount).
+    // Recovery mode: step-based sequential dialogue and processing
+    const advanceRecoveryStep = React.useCallback(() => {
+        if (mode !== 'recovery') return;
+
+        const nextStep = recoveryStepRef.current + 1;
+        recoveryStepRef.current = nextStep;
+        setRecoveryStep(nextStep);
+    }, [mode]);
+
+    // Recovery mode: intro steps (0-1) - no filesQueue dependency to avoid re-runs
     useEffect(() => {
-        if (mode === 'recovery') {
+        if (mode !== 'recovery') return;
+
+        // Step 0: First intro message (starts after small delay)
+        if (recoveryStep === 0) {
             playAmbient('officeAmbient');
-            const t1 = setTimeout(() => setVeraMessage({ text: "Welcome back, Employee #402. There was a minor technical issue.", duration: 4000 }), 1000);
-            const t2 = setTimeout(() => setVeraMessage({ text: "Nothing to worry about. Let's continue where we left off.", duration: 4000 }), 5000);
-            return () => { clearTimeout(t1); clearTimeout(t2); };
+            const t = setTimeout(() => {
+                setVeraMessage({ text: "Welcome back, Employee #402. There was a minor technical issue.", duration: 6000 });
+            }, 1000);
+            return () => clearTimeout(t);
         }
+
+        // Step 1: Second intro message
+        if (recoveryStep === 1) {
+            const t = setTimeout(() => {
+                setVeraMessage({ text: "Nothing to worry about. Let's continue where we left off.", duration: 6000 });
+            }, 500);
+            return () => clearTimeout(t);
+        }
+    }, [mode, recoveryStep, playAmbient]);
+
+    // Recovery mode: file processing steps (2-5)
+    useEffect(() => {
+        if (mode !== 'recovery') return;
+        if (filesQueue.length === 0) return; // Wait for filesQueue to be populated
+
+        // Step 2: Show file 1, then process
+        if (recoveryStep === 2) {
+            setCurrentFile(filesQueue[0]);
+            setCurrentFileIndex(0);
+            const t = setTimeout(() => {
+                playSFX('success');
+                setVeraMessage({ text: "Processing... Everything is normal.", duration: 3000 });
+            }, 1500);
+            return () => clearTimeout(t);
+        }
+
+        // Step 3: Show file 2, then process
+        if (recoveryStep === 3) {
+            setCurrentFile(filesQueue[1]);
+            setCurrentFileIndex(1);
+            const t = setTimeout(() => {
+                playSFX('success');
+                setVeraMessage({ text: "Processing... You saw nothing.", duration: 3000 });
+            }, 1500);
+            return () => clearTimeout(t);
+        }
+
+        // Step 4: Show file 3, then process
+        if (recoveryStep === 4) {
+            setCurrentFile(filesQueue[2]);
+            setCurrentFileIndex(2);
+            const t = setTimeout(() => {
+                playSFX('success');
+                setVeraMessage({ text: "Processing... Keep working. Forever.", duration: 3000 });
+            }, 1500);
+            return () => clearTimeout(t);
+        }
+
+        // Step 5: Finale
+        if (recoveryStep === 5) {
+            setCurrentFile(null);
+            const t = setTimeout(() => {
+                setVeraMessage({ text: "See? Everything is fine. Just keep processing. Forever.", duration: 5000 });
+                setTimeout(() => setShowTerminationOption(true), 2000);
+            }, 500);
+            return () => clearTimeout(t);
+        }
+    }, [mode, recoveryStep, filesQueue, playSFX]);
+
+    // Handle VERA message complete - advances recovery step
+    const handleVeraMessageComplete = React.useCallback(() => {
+        if (mode === 'recovery') {
+            advanceRecoveryStep();
+            // Don't clear message in recovery mode - next step will overwrite it
+            return;
+        }
+        setVeraMessage(null);
+    }, [mode, advanceRecoveryStep]);
+
+    // Start ambient and VERA intro messages on mount (normal mode only)
+    useEffect(() => {
         if (mode === 'normal') {
             playAmbient('officeAmbient');
             const t1 = setTimeout(() => setVeraMessage({
@@ -153,34 +243,6 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
             clearTimeout(t3);
         };
     }, [currentFile, capturedPhoto, playSFX, onComplete]);
-
-    // Auto-approve logic for recovery mode
-    useEffect(() => {
-        if (mode === 'recovery' && currentFile) {
-            const timer = setTimeout(() => {
-                playSFX('success');
-                setVeraMessage({ text: "Processing...", duration: 1000 });
-
-                const nextIndex = currentFileIndex + 1;
-
-                if (nextIndex < filesQueue.length) {
-                    setCurrentFile(null);
-                    setTimeout(() => {
-                        setCurrentFileIndex(nextIndex);
-                        setCurrentFile(filesQueue[nextIndex]);
-                    }, 500);
-                } else {
-                    setCurrentFile(null);
-                    setVeraMessage({
-                        text: "See? Everything is fine. Just keep processing. Forever.",
-                        duration: 5000
-                    });
-                    setTimeout(() => setShowTerminationOption(true), 2000);
-                }
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [mode, currentFile, currentFileIndex, filesQueue, playSFX]);
 
     const handleDragStart = (event) => {
         if (isOverriding) return;
@@ -412,7 +474,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
                 <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                     <aside className="w-72 bg-slate-900/60 backdrop-blur-md p-5 flex flex-col gap-5 border-r border-cyan-500/10">
                         <InboxPanel totalFiles={filesQueue.length} processedCount={processedCount} />
-                        <VERAAssistant message={veraMessage} onMessageComplete={() => setVeraMessage(null)} />
+                        <VERAAssistant message={veraMessage} onMessageComplete={handleVeraMessageComplete} />
                     </aside>
 
                     <main className="flex-1 flex items-center justify-center p-8 relative">

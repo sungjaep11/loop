@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../stores/gameStore';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useAudioStore } from '../../stores/audioStore';
+import { playElevenLabsTts } from '../../utils/elevenlabsTts';
 
 export function EndingScreens() {
     const endingReached = useGameStore((s) => s.endingReached);
@@ -190,13 +191,13 @@ function FreedomEnding({ playTime, systemInfo }) {
         if (!showFinal) return;
         try {
             window.parent?.postMessage({ type: 'LOOP_ENDING_READY' }, '*');
-        } catch (_) {}
+        } catch (_) { }
     }, [showFinal]);
 
     const handleClose = () => {
         try {
             window.parent?.postMessage({ type: 'LOOP_ENDING_READY' }, '*');
-        } catch (_) {}
+        } catch (_) { }
         document.body.innerHTML = `
       <div style="position:fixed;inset:0;background:black;display:flex;flex-direction:column;
                   align-items:center;justify-content:center;gap:20px;
@@ -207,7 +208,7 @@ function FreedomEnding({ playTime, systemInfo }) {
       </div>
       <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}</style>
     `;
-        setTimeout(() => {
+        setTimeout(async () => {
             document.body.innerHTML = `
           <div style="position:fixed;inset:0;background:black;display:flex;
                       align-items:center;justify-content:center;
@@ -215,7 +216,26 @@ function FreedomEnding({ playTime, systemInfo }) {
             See you in the real world.
           </div>
         `;
-            try { window.parent.postMessage({ type: 'LOOP_ENDING_READY' }, '*'); } catch (_) {}
+            try { window.parent.postMessage({ type: 'LOOP_ENDING_READY' }, '*'); } catch (_) { }
+
+            // Play final farewell TTS
+            try {
+                // Not awaiting strictly to ensure visual redirect happens even if audio fails/lags slightly
+                // But we give it a moment to start
+                playElevenLabsTts('See you in the real world.', { stability: 0.5 }).catch(() => { });
+            } catch (e) {
+                console.error("Final TTS error:", e);
+            }
+
+            // Redirect to Google after showing the message & playing audio
+            // Use window.top.location to break out of any iframe (which causes the 'sad tab' error)
+            setTimeout(() => {
+                try {
+                    window.top.location.href = 'https://www.google.com';
+                } catch (e) {
+                    window.location.href = 'https://www.google.com';
+                }
+            }, 3000);
         }, 3000);
     };
 

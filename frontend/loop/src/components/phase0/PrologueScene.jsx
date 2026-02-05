@@ -21,19 +21,19 @@ export function PrologueScene({ onComplete }) {
     }, []);
 
     return (
-        <div className="w-full h-full bg-black flex items-center justify-center relative overflow-hidden">
+        <div className="w-full h-full bg-black relative overflow-hidden">
             {/* Ambient Dark Room Effect */}
             <div className="absolute inset-0 bg-gradient-to-b from-black via-[#050510] to-black opacity-90" />
 
-            {/* Glowing Monitor in Center */}
+            {/* Full Screen Content */}
             <motion.div
-                className="relative z-10 w-[800px] h-[600px] bg-[#1a1a1a] rounded-lg border-8 border-[#333] shadow-[0_0_100px_rgba(100,200,255,0.1)] overflow-hidden flex flex-col"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                className="relative z-10 w-full h-full bg-black overflow-hidden flex flex-col"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 2 }}
             >
                 {/* Screen Content */}
-                <div className="flex-1 bg-black relative p-8 font-sans text-gray-300">
+                <div className="flex-1 bg-black relative p-8 font-sans text-gray-300 overflow-y-auto">
                     {/* Fake Email Client Interface */}
                     <div className="border-b border-gray-700 pb-2 mb-4 flex justify-between items-center bg-[#111] p-2 rounded">
                         <span className="font-bold text-white">Inbox (1)</span>
@@ -119,11 +119,45 @@ export function PrologueScene({ onComplete }) {
                                         At S.A.V.E. (Secure Archive for Valuable Emotions), we believe in preserving the
                                         best of humanity. You have been chosen to join our elite Data Processing Unit.
                                     </p>
+
                                     <div className="bg-gray-100 p-4 border-l-4 border-neogen-accent my-6">
                                         <p className="font-bold">Role: Data Verification Specialist</p>
                                         <p>Status: Immediate Start Required</p>
+                                        <p>Department: Emotion Classification Division</p>
+                                        <p>Security Clearance: Level 2</p>
                                     </div>
+
+                                    <p className="font-bold text-gray-800">Your Responsibilities:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                                        <li>Process and classify emotional data fragments</li>
+                                        <li>Verify authenticity of archived human expressions</li>
+                                        <li>Maintain 99.7% accuracy in pattern recognition tasks</li>
+                                        <li>Follow all protocols established by V.E.R.A. system</li>
+                                    </ul>
+
+                                    <p className="font-bold text-gray-800 mt-4">Benefits Package:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                                        <li>Competitive compensation (details upon onboarding)</li>
+                                        <li>Full access to S.A.V.E. employee facilities</li>
+                                        <li>Comprehensive wellness monitoring program</li>
+                                        <li>Opportunity to contribute to humanity's preservation</li>
+                                    </ul>
+
+                                    <div className="bg-yellow-50 p-4 border-l-4 border-yellow-500 my-6">
+                                        <p className="font-bold text-yellow-800">Important Notice:</p>
+                                        <p className="text-yellow-700 text-xs mt-1">
+                                            This offer is time-sensitive. Failure to initialize your workstation within
+                                            the designated timeframe may result in automatic reassignment of your position.
+                                            All employees are required to complete mandatory orientation before accessing
+                                            primary systems.
+                                        </p>
+                                    </div>
+
                                     <p>
+                                        We look forward to your contribution to our mission. Together, we will ensure
+                                        that the most valuable aspects of human experience are preserved for future generations.
+                                    </p>
+                                    <p className="text-gray-500 text-xs mt-4">
                                         Please initialize your workstation immediately to begin the onboarding process.
                                     </p>
                                 </div>
@@ -144,14 +178,7 @@ export function PrologueScene({ onComplete }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Monitor Chin */}
-                <div className="h-8 bg-[#222] flex items-center justify-center border-t border-[#444]">
-                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_#0f0]" />
-                </div>
             </motion.div>
-
-            {/* Table Reflection/Glow */}
-            <div className="absolute bottom-0 w-full h-1/4 bg-gradient-to-t from-[#1a1a2e]/20 to-transparent pointer-events-none" />
         </div>
     );
 }
