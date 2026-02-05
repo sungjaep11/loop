@@ -53,7 +53,7 @@ const MirrorSite = ({ onComplete }) => {
                         </div>
 
                         <div style={{ marginTop: '40px', color: 'red', fontStyle: 'italic' }}>
-                            AIDRA: "There is no 'outside'. This is your world now."
+                            VERA: "There is no 'outside'. This is your world now."
                         </div>
                     </div>
                 ) : (

@@ -80,88 +80,78 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
     const playSFX = useAudioStore((s) => s.playSFX);
     const playAmbient = useAudioStore((s) => s.playAmbient);
 
-    // Initial Setup
+    // Initial Setup: queue and files
     useEffect(() => {
-        let queue = [];
-        if (mode === 'recovery') {
-            queue = [...resetFiles];
-            playAmbient('officeAmbient');
-
-            setTimeout(() => {
-                setVeraMessage({
-                    text: "Welcome back, Employee #402. There was a minor technical issue.",
-                    duration: 4000,
-                });
-            }, 1000);
-
-            setTimeout(() => {
-                setVeraMessage({
-                    text: "Nothing to worry about. Let's continue where we left off.",
-                    duration: 4000,
-                });
-            }, 5000);
-
-        } else {
-            queue = [...allEmotionFiles];
-            playAmbient('officeAmbient'); // Start lo-fi music!
-
-            setTimeout(() => {
-                setVeraMessage({
-                    text: "Good morning, Employee #402. I am V.E.R.A., your Virtual Emotion Recognition Assistant.",
-                    duration: 5000,
-                });
-            }, 1000);
-
-            setTimeout(() => {
-                setVeraMessage({
-                    text: "Your task is simple: classify emotions as POSITIVE or NEGATIVE. Drag each item to the appropriate zone.",
-                    duration: 5000,
-                });
-            }, 6500);
-        }
+        let queue = mode === 'recovery' ? [...resetFiles] : [...allEmotionFiles];
         setFilesQueue(queue);
-
         if (queue.length > 0) {
             setCurrentFile(queue[0]);
             setCurrentPhase(getPhaseByFileId(queue[0].id));
         }
+    }, [mode]);
+
+    // Start ambient and VERA intro messages on mount (same pattern as LogicDuelScene TTS on mount).
+    useEffect(() => {
+        if (mode === 'recovery') {
+            playAmbient('officeAmbient');
+            const t1 = setTimeout(() => setVeraMessage({ text: "Welcome back, Employee #402. There was a minor technical issue.", duration: 4000 }), 1000);
+            const t2 = setTimeout(() => setVeraMessage({ text: "Nothing to worry about. Let's continue where we left off.", duration: 4000 }), 5000);
+            return () => { clearTimeout(t1); clearTimeout(t2); };
+        }
+        if (mode === 'normal') {
+            playAmbient('officeAmbient');
+            const t1 = setTimeout(() => setVeraMessage({
+                text: "Good morning, Employee #402. I am V.E.R.A., your Virtual Emotion Recognition Assistant.",
+                duration: 5000,
+            }), 1000);
+            const t2 = setTimeout(() => setVeraMessage({
+                text: "Your task is simple: classify emotions as POSITIVE or NEGATIVE. Drag each item to the appropriate zone.",
+                duration: 5000,
+            }), 6500);
+            return () => { clearTimeout(t1); clearTimeout(t2); };
+        }
     }, [mode, playAmbient]);
 
-    // Handle Phase 4 webcam (Self-elimination) - MODIFIED: Auto-crash sequence
+    // Handle Phase 4 webcam: load file first, then run full crash sequence so glitch overlay has time to play.
     useEffect(() => {
-        if (currentFile && currentFile.type === 'webcam') {
-            setWebcamImage(capturedPhoto);
-            setIsEliminateMode(true);
-
-            // 1. Reveal V.E.R.A. analysis
-            setTimeout(() => {
-                setVeraMessage({
-                    text: "Subject identified. Employee #402.",
-                    duration: 3000,
-                    type: 'warning'
-                });
-            }, 1000);
-
-            // 2. Simulate System Crash / Memory Leak (Interrupting the process)
-            setTimeout(() => {
-                // Play error sound
-                playSFX('error');
-
-                // Show critical error message
-                setVeraMessage({
-                    text: "CRITICAL ALERT: MEMORY CORRUPTION DETECTED.",
-                    duration: 2000,
-                    type: 'error'
-                });
-            }, 4000);
-
-            // 3. Force transition to Investigation Desktop (The Crash)
-            setTimeout(() => {
-                onComplete();
-            }, 6000);
-        } else {
+        if (!currentFile || currentFile.type !== 'webcam') {
             setIsEliminateMode(false);
+            return;
         }
+
+        setWebcamImage(capturedPhoto);
+        setIsEliminateMode(true);
+
+        // 1. Reveal V.E.R.A. analysis
+        const t1 = setTimeout(() => {
+            setVeraMessage({
+                text: "Subject identified. Employee #402.",
+                duration: 3000,
+                type: 'warning'
+            });
+        }, 1000);
+
+        // 2. Trigger crash overlay + error (glitch stays visible; we transition after it has time to play)
+        const t2 = setTimeout(() => {
+            setIsCrashing(true);
+            playSFX('error');
+            setVeraMessage({
+                text: "CRITICAL ALERT: MEMORY CORRUPTION DETECTED.",
+                duration: 2000,
+                type: 'error'
+            });
+        }, 4000);
+
+        // 3. Transition only after crash animation has played (~3s of glitch)
+        const t3 = setTimeout(() => {
+            onComplete();
+        }, 7000);
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            clearTimeout(t3);
+        };
     }, [currentFile, capturedPhoto, playSFX, onComplete]);
 
     // Auto-approve logic for recovery mode
@@ -301,20 +291,7 @@ export default function WorkspaceScene({ onComplete, mode = 'normal' }) {
         if (nextIndex < filesQueue.length) {
             const nextFile = filesQueue[nextIndex];
 
-            // MODIFIED: If next file is the webcam trigger (Phase 4), CRASH with glitch effect.
-            if (nextFile.type === 'webcam') {
-                setCurrentFile(null); // Clear current file to avoid flickering
-                setIsCrashing(true); // Trigger glitch overlay
-
-                // Play error sound if available
-                playSFX?.('error');
-
-                setTimeout(() => {
-                    onComplete(); // Go to InvestigationDesktop (Blue Screen)
-                }, 2500); // Longer delay to show glitch effect
-                return;
-            }
-
+            // Load next file (including webcam). Webcam useEffect handles crash sequence and onComplete.
             setCurrentFile(null);
             setTimeout(() => {
                 setCurrentFileIndex(nextIndex);

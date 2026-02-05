@@ -55,7 +55,7 @@ const EmailTrap = ({ onComplete }) => {
                         <div style={{ fontSize: '0.95rem', marginBottom: '6px' }}>(No Subject)</div>
                         <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '10px' }}>From: Unknown Sender</div>
                         <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', lineHeight: '1.4' }}>
-                            Don't trust AIDRA.<br />
+                            Don't trust VERA.<br />
                             Press <b>F12</b> to see the truth.<br />
                             Type <b>HELP</b> in the address bar above.
                         </div>

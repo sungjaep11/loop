@@ -12,18 +12,30 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
+/** GET /api/tts - health check: returns whether TTS is configured (has API key). */
+export async function GET() {
+  const hasKey = !!process.env.ELEVENLABS_API_KEY?.trim();
+  return NextResponse.json(
+    { tts: "ok", hasKey },
+    { status: 200, headers: corsHeaders }
+  );
+}
+
 export async function POST(request: NextRequest) {
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || "VR6AewLTigWG4xSOukaG";
 
   if (!apiKey) {
+    console.error(
+      "TTS: ELEVENLABS_API_KEY is not set. Add it to frontend/.env and restart the Next dev server."
+    );
     return NextResponse.json(
       { error: "ELEVENLABS_API_KEY is not set" },
       { status: 500, headers: corsHeaders }
     );
   }
 
-  let body: { text?: string };
+  let body: { text?: string; voiceId?: string };
   try {
     body = await request.json();
   } catch {
@@ -41,8 +53,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const resolvedVoiceId =
+    typeof body.voiceId === "string" && body.voiceId.trim()
+      ? body.voiceId.trim()
+      : voiceId;
+
+  console.log("TTS POST:", text.slice(0, 50) + (text.length > 50 ? "…" : ""));
   try {
-    const res = await fetch(`${ELEVENLABS_API_URL}/${voiceId}`, {
+    const res = await fetch(`${ELEVENLABS_API_URL}/${resolvedVoiceId}`, {
       method: "POST",
       headers: {
         "xi-api-key": apiKey,
@@ -65,6 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     const audioBuffer = await res.arrayBuffer();
+    console.log("TTS OK:", (audioBuffer.byteLength / 1024).toFixed(1), "KB");
     return new NextResponse(audioBuffer, {
       status: 200,
       headers: {

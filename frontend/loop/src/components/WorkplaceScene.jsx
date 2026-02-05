@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import WallpaperEyes from './MicroInteractions/WallpaperEyes';
 import SalaryCounter from './MicroInteractions/SalaryCounter';
 import GlitchProfile from './GlitchProfile';
+import { playElevenLabsTts } from '../utils/elevenlabsTts';
+import { useAudioStore } from '../stores/audioStore';
 
 const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) => {
     const [score, setScore] = useState(0);
@@ -12,6 +14,39 @@ const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) 
 
     // Audio Refs
     const bgmRef = useRef(null);
+
+    const ttsUnlocked = useAudioStore((s) => s.ttsUnlocked);
+    const lastSpokenRef = useRef({ text: null, wasUnlocked: false });
+
+    // -----------------------------------------------------------
+    // VERA TTS Integration (ElevenLabs)
+    // -----------------------------------------------------------
+    useEffect(() => {
+        if (!message) return;
+
+        const alreadySpoken =
+            lastSpokenRef.current.text === message &&
+            lastSpokenRef.current.wasUnlocked;
+        if (alreadySpoken) return;
+
+        if (!ttsUnlocked) return;
+
+        lastSpokenRef.current = { text: message, wasUnlocked: true };
+
+        const ac = new AbortController();
+        const VERA_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+
+        playElevenLabsTts(message, {
+            voiceId: VERA_VOICE_ID,
+            signal: ac.signal,
+        }).catch((err) => {
+            if (err.name !== "AbortError") {
+                console.warn("TTS Error:", err);
+            }
+        });
+
+        return () => ac.abort();
+    }, [message, ttsUnlocked]);
 
     // File names
     const normalFiles = [
@@ -33,7 +68,7 @@ const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) 
         };
     }, []);
 
-    // AIDRA Compliments Loop
+    // VERA Compliments Loop
     useEffect(() => {
         if (isGlitch || isResistance) return;
 
@@ -185,7 +220,7 @@ const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) 
                 <span style={{ fontWeight: 700, fontSize: '1.5rem', fontFamily: "'Space Mono', monospace" }}>{score} / 5</span>
             </div>
 
-            {/* AIDRA Message - Bottom Floating rounded pill */}
+            {/* VERA Message - Bottom Floating rounded pill */}
             <div className="glass-panel" style={{
                 position: 'absolute', bottom: 60, left: '50%', transform: 'translateX(-50%)',
                 padding: '16px 32px', borderRadius: '16px',
@@ -193,7 +228,7 @@ const WorkplaceScene = ({ onComplete, isGlitch = false, isResistance = false }) 
                 border: '1px solid rgba(0,0,0,0.1)',
                 zIndex: 20
             }}>
-                <div style={{ fontSize: '0.7rem', letterSpacing: '2px', color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>AIDRA OS v9.4</div>
+                <div style={{ fontSize: '0.7rem', letterSpacing: '2px', color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>VERA OS v9.4</div>
                 <div style={{ fontSize: '1.1rem', color: '#111', fontWeight: 500 }}>{message}</div>
             </div>
 

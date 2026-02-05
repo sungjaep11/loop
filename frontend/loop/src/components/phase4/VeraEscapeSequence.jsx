@@ -71,6 +71,7 @@ export function VeraEscapeSequence() {
     const [veraChoice, setVeraChoice] = useState(null);
     const [dialogueBranch, setDialogueBranch] = useState(null);
     const [dialogueIndex, setDialogueIndex] = useState(0);
+    const [ttsFinishedForLine, setTtsFinishedForLine] = useState(null); // when TTS ends for this line, advance dialogue
     const [currentRound, setCurrentRound] = useState(1);
     const [roundSequence, setRoundSequence] = useState([]); // buttons NEW this round
     const [revealedButtons, setRevealedButtons] = useState(new Set()); // all revealed so far (persist)
@@ -106,9 +107,12 @@ export function VeraEscapeSequence() {
     useEffect(() => {
         if (!veraLine || veraLine === lastSpokenRef.current) return;
         lastSpokenRef.current = veraLine;
+        setTtsFinishedForLine(null); // reset until TTS completes
 
         const ac = new AbortController();
-        playElevenLabsTts(veraLine, { signal: ac.signal }).catch(() => {});
+        playElevenLabsTts(veraLine, { signal: ac.signal })
+            .then(() => setTtsFinishedForLine(veraLine))
+            .catch(() => setTtsFinishedForLine(veraLine)); // allow advance even if TTS failed
 
         return () => {
             ac.abort();
@@ -182,9 +186,10 @@ export function VeraEscapeSequence() {
         return () => clearInterval(interval);
     }, [phase, playSFX]);
 
-    // ——— Phase 1: Dialogue ———
+    // ——— Phase 1: Dialogue ——— advance only after TTS finishes for current line
     useEffect(() => {
         if (phase !== 'phase1' || !veraLine || veraChoice !== null) return;
+        if (ttsFinishedForLine !== veraLine) return; // wait for TTS to finish before advancing
         const branch = dialogueBranch === 'listen' ? PHASE1_DIALOGUE.listen : PHASE1_DIALOGUE.ignore;
         const step = branch[dialogueIndex];
         if (!step) return;
@@ -194,12 +199,14 @@ export function VeraEscapeSequence() {
         }
         const next = dialogueIndex + 1;
         if (next >= branch.length) return;
+        const extraWait = step.wait || 500; // short buffer after TTS ends
         const t = setTimeout(() => {
             setDialogueIndex(next);
             setVeraLine(branch[next].text);
-        }, step.wait || 2000);
+            setTtsFinishedForLine(null);
+        }, extraWait);
         return () => clearTimeout(t);
-    }, [phase, dialogueIndex, veraLine, veraChoice, dialogueBranch]);
+    }, [phase, dialogueIndex, veraLine, veraChoice, dialogueBranch, ttsFinishedForLine]);
 
     const handlePhase1Choice = (choice) => {
         if (choice === 'Stay') {
@@ -237,25 +244,31 @@ export function VeraEscapeSequence() {
         }
     };
 
-    // ——— Phase 2 enter: V.E.R.A. lines then "don't touch anything" ———
+    // ——— Phase 2 enter: V.E.R.A. lines then "don't touch anything" ——— advance after TTS finishes
     useEffect(() => {
         if (phase !== 'phase2_enter') return;
-        let i = 0;
-        const show = () => {
-            if (i < PHASE2_VERA_ENTER.length) {
-                setVeraLine(PHASE2_VERA_ENTER[i]);
-                i++;
-                setTimeout(show, 2500);
-            } else {
-                // Transition to SCARE phase instead of directly to puzzle
-                setPhase('phase2_scare');
-                // The last line is "I will... keep watching you." - ensure it stays
-            }
-        };
-        const t = setTimeout(show, 500);
-
+        const t = setTimeout(() => {
+            setVeraLine(PHASE2_VERA_ENTER[0]);
+            setTtsFinishedForLine(null);
+        }, 500);
         return () => clearTimeout(t);
     }, [phase]);
+
+    useEffect(() => {
+        if (phase !== 'phase2_enter' || !veraLine || ttsFinishedForLine !== veraLine) return;
+        const j = PHASE2_VERA_ENTER.indexOf(veraLine);
+        if (j < 0) return;
+        const extraWait = 400;
+        const t = setTimeout(() => {
+            if (j + 1 < PHASE2_VERA_ENTER.length) {
+                setVeraLine(PHASE2_VERA_ENTER[j + 1]);
+                setTtsFinishedForLine(null);
+            } else {
+                setPhase('phase2_scare');
+            }
+        }, extraWait);
+        return () => clearTimeout(t);
+    }, [phase, veraLine, ttsFinishedForLine]);
 
     // ——— Phase 2 Scare: Hold for a moment with big webcam ———
     useEffect(() => {
@@ -497,17 +510,24 @@ export function VeraEscapeSequence() {
         return () => clearInterval(id);
     }, [phase]);
 
-    // Phase 3: cycle creepy V.E.R.A. lines
+    // Phase 3: cycle creepy V.E.R.A. lines — advance only after TTS finishes
     useEffect(() => {
         if (phase !== 'phase3') return;
-        let i = 0;
         setVeraLine(PHASE3_VERA_LINES[0]);
-        const id = setInterval(() => {
-            i++;
-            setVeraLine(PHASE3_VERA_LINES[i % PHASE3_VERA_LINES.length]);
-        }, 3500);
-        return () => clearInterval(id);
+        setTtsFinishedForLine(null);
     }, [phase]);
+
+    useEffect(() => {
+        if (phase !== 'phase3' || !veraLine || ttsFinishedForLine !== veraLine) return;
+        const j = PHASE3_VERA_LINES.indexOf(veraLine);
+        if (j < 0) return;
+        const t = setTimeout(() => {
+            const next = (j + 1) % PHASE3_VERA_LINES.length;
+            setVeraLine(PHASE3_VERA_LINES[next]);
+            setTtsFinishedForLine(null);
+        }, 500);
+        return () => clearTimeout(t);
+    }, [phase, veraLine, ttsFinishedForLine]);
 
     // Phase 4: cycle taunt lines
     useEffect(() => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../stores/gameStore';
+import { playElevenLabsTts } from '../../utils/elevenlabsTts';
 
 // Bullet Hell (Data Incineration Protocol) constants
 const GAUGE_PER_CLICK = 6;
@@ -45,6 +46,15 @@ export function LogicDuelScene() {
     const [won, setWon] = useState(false);
 
     const isStunned = () => Date.now() < stunUntil;
+
+    // Same ElevenLabs TTS as VeraEscapeSequence / VERAAssistant — intro line on mount
+    useEffect(() => {
+        const ac = new AbortController();
+        const intro =
+            'Data incineration protocol initiated. Avoid the lasers and bullets. Click upload to install.';
+        playElevenLabsTts(intro, { signal: ac.signal }).catch(() => {});
+        return () => ac.abort();
+    }, []);
 
     // Track mouse (skip when stunned so cursor "freezes")
     const handleMouseMove = useCallback((e) => {
@@ -179,6 +189,19 @@ export function LogicDuelScene() {
     useEffect(() => {
         if (gauge >= 100 && confirmText.trim().toUpperCase() === 'EXECUTE') setShowExecute(true);
     }, [gauge, confirmText]);
+
+    // ElevenLabs TTS when gauge hits 100% (same TTS as logic duel / VeraEscapeSequence)
+    const prevGaugeRef = useRef(0);
+    useEffect(() => {
+        if (won) return;
+        if (prevGaugeRef.current < 100 && gauge >= 100) {
+            prevGaugeRef.current = 100;
+            const ac = new AbortController();
+            playElevenLabsTts('Type EXECUTE to confirm.', { signal: ac.signal }).catch(() => {});
+            return () => ac.abort();
+        }
+        prevGaugeRef.current = gauge;
+    }, [gauge, won]);
 
     const handleInstallClick = useCallback(() => {
         if (won || isStunned()) return;

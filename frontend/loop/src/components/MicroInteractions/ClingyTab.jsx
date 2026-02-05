@@ -9,7 +9,7 @@ const ClingyTab = () => {
         "Come back.",
         "Work is not done.",
         "Where are you going?",
-        "AIDRA is waiting."
+        "VERA is waiting."
     ];
 
     useEffect(() => {

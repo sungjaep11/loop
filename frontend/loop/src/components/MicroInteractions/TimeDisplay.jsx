@@ -47,7 +47,7 @@ const TimeDisplay = () => {
                     marginTop: '4px',
                     borderRadius: '4px'
                 }} className="animate-fade-in mono">
-                    AIDRA: {comment}
+                    VERA: {comment}
                 </div>
             )}
         </div>

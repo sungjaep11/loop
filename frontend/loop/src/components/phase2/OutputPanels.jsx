@@ -64,7 +64,7 @@ export function OutputPanels({ approvedCount = 0, heldCount = 0 }) {
                         transition={{ delay: 0.3 }}
                     >
                         <span className="text-green-500">{'>'}</span>
-                        <span>AIDRA SYNC ACTIVE</span>
+                        <span>VERA SYNC ACTIVE</span>
                     </motion.div>
                     <motion.div
                         className="flex items-center gap-2 text-gray-500"
