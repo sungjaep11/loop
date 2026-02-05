@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TypewriterText } from '../common/TypewriterText';
+import { playElevenLabsTts } from '../../utils/elevenlabsTts';
 
 // Audio waveform bars component
 function AudioWaveform({ isActive }) {
@@ -40,54 +41,29 @@ export function VERAAssistant({ message, onMessageComplete }) {
             setIsTyping(true);
             setDisplayedMessage(message);
 
-            // TTS Implementation
-            const speak = () => {
-                // Prevent duplicate speaking of the same active message
-                if (lastSpokenText.current === message.text) return;
-                lastSpokenText.current = message.text;
+            if (lastSpokenText.current === message.text) return;
+            lastSpokenText.current = message.text;
 
-                const utterance = new SpeechSynthesisUtterance(message.text);
-                const voices = window.speechSynthesis.getVoices();
-                // Try to find a robotic/female voice
-                const voice = voices.find(v =>
-                    v.name.includes('Google US English') ||
-                    v.name.includes('Samantha') ||
-                    v.name.includes('Zira')
-                ) || voices[0];
+            const ac = new AbortController();
+            const duration = message.duration || 3000;
 
-                if (voice) utterance.voice = voice;
-                utterance.pitch = 1.0;
-                utterance.rate = 1.1; // Slightly faster for AI feel
-                utterance.volume = 0.8;
-
-                window.speechSynthesis.cancel(); // Clears queue
-                window.speechSynthesis.speak(utterance);
+            const done = () => {
+                setIsTyping(false);
+                onMessageComplete?.();
+                lastSpokenText.current = null;
             };
 
-            // Voices loading is async in some browsers
-            if (window.speechSynthesis.getVoices().length === 0) {
-                // Use a one-time listener to avoid accumulation
-                const onVoicesChanged = () => {
-                    speak();
-                    window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
-                };
-                window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
-            } else {
-                speak();
-            }
+            playElevenLabsTts(message.text, { signal: ac.signal })
+                .then(done)
+                .catch(() => {});
 
-            const duration = message.duration || 3000;
-            if (duration > 0) {
-                const timer = setTimeout(() => {
-                    setIsTyping(false);
-                    onMessageComplete?.();
-                    lastSpokenText.current = null; // Reset allows same text to be spoken later if needed
-                }, duration);
-                return () => clearTimeout(timer);
-            }
+            const fallbackTimer = duration > 0 ? setTimeout(done, duration) : null;
+
+            return () => {
+                ac.abort();
+                if (fallbackTimer) clearTimeout(fallbackTimer);
+            };
         } else {
-            // Cancel speech if message is cleared immediately (optional safety)
-            window.speechSynthesis.cancel();
             lastSpokenText.current = null;
         }
     }, [message, onMessageComplete]);

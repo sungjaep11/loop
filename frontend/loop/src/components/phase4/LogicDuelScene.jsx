@@ -349,7 +349,14 @@ export function LogicDuelScene() {
                                 handleInstallClick();
                             }}
                             disabled={stunned}
-                            className="px-8 py-4 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 disabled:pointer-events-none border-2 border-cyan-400 text-white font-mono font-bold text-lg rounded-lg shadow-lg cursor-pointer transition-colors"
+                            className="px-8 py-4 disabled:opacity-50 disabled:pointer-events-none border-2 border-cyan-400 border-t-cyan-300/50 text-white font-mono font-bold text-lg rounded-lg cursor-pointer"
+                            style={{
+                                background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 50%, #155e75 100%)',
+                                boxShadow: '0 6px 0 #0c4a6e, 0 8px 0 rgba(0,0,0,0.3), 0 12px 28px rgba(8,145,178,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                            }}
+                            whileHover={{ scale: 1.05, boxShadow: '0 8px 0 #0c4a6e, 0 10px 0 rgba(0,0,0,0.3), 0 14px 32px rgba(8,145,178,0.45)' }}
+                            whileTap={{ y: 5, boxShadow: '0 1px 0 #0c4a6e, 0 2px 10px rgba(0,0,0,0.35), inset 0 2px 6px rgba(0,0,0,0.2)' }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                         >
                             UPLOAD
                         </motion.button>
@@ -375,7 +382,14 @@ export function LogicDuelScene() {
                                         e.stopPropagation();
                                         handleExecuteClick(e);
                                     }}
-                                    className="mt-2 px-6 py-2 bg-red-600 hover:bg-red-500 border-2 border-red-400 text-white font-mono font-bold rounded-lg shadow-lg cursor-pointer inline-block pointer-events-auto"
+                                    className="mt-2 px-6 py-2 border-2 border-red-400 border-t-red-300/50 text-white font-mono font-bold rounded-lg cursor-pointer inline-block pointer-events-auto"
+                                    style={{
+                                        background: 'linear-gradient(180deg, #dc2626 0%, #b91c1c 50%, #7f1d1d 100%)',
+                                        boxShadow: '0 4px 0 #7f1d1d, 0 5px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                                    }}
+                                    whileHover={{ scale: 1.05, boxShadow: '0 5px 0 #7f1d1d, 0 7px 0 rgba(0,0,0,0.3), 0 10px 24px rgba(220,38,38,0.45)' }}
+                                    whileTap={{ y: 3, boxShadow: '0 1px 0 #7f1d1d, 0 2px 8px rgba(0,0,0,0.35), inset 0 2px 4px rgba(0,0,0,0.2)' }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                 >
                                     EXECUTE
                                 </motion.button>

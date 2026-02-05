@@ -215,6 +215,7 @@ function FreedomEnding({ playTime, systemInfo }) {
             See you in the real world.
           </div>
         `;
+            try { window.parent.postMessage({ type: 'LOOP_ENDING_READY' }, '*'); } catch (_) {}
         }, 3000);
     };
 

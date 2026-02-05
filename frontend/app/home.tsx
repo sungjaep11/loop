@@ -6,9 +6,20 @@ export default function Home() {
   const [time, setTime] = useState<string>("");
   // Auto-open the loop app immediately
   const [loopAppOpen, setLoopAppOpen] = useState(true);
+  // When the loop sends "See you in the real world." ending, power button goes back
+  const [endingReady, setEndingReady] = useState(false);
 
   // Iframe src: stable on first render to avoid hydration mismatch (server vs client Date.now() differs)
   const [iframeSrc, setIframeSrc] = useState("/loop/index.html");
+
+  // Listen for ending from loop iframe (Freedom ending → "See you in the real world.")
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e?.data?.type === "LOOP_ENDING_READY") setEndingReady(true);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   // 시계 기능: 1초마다 현재 시간 업데이트
   useEffect(() => {
@@ -142,10 +153,17 @@ export default function Home() {
               <div className="w-6 h-2 rounded-full bg-[#b0b0b0] shadow-[inset_1px_1px_1px_rgba(0,0,0,0.3)]"></div>
             </div>
 
-            {/* 전원 버튼과 LED */}
+            {/* 전원 버튼과 LED — when ending "See you in the real world." is shown, goes back to previous page */}
             <div className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shadow-[0_0_8px_#4ade80] animate-pulse"></div> {/* LED */}
-              <button className="w-8 h-8 bg-[#d0d0d0] border-2 border-[#f0f0f0] border-b-[#808080] border-r-[#808080] active:border-[#808080] active:border-b-[#f0f0f0] active:border-r-[#f0f0f0] rounded-sm shadow-sm"></button>
+              <button
+                type="button"
+                className="w-8 h-8 bg-[#d0d0d0] border-2 border-[#f0f0f0] border-b-[#808080] border-r-[#808080] active:border-[#808080] active:border-b-[#f0f0f0] active:border-r-[#f0f0f0] rounded-sm shadow-sm cursor-pointer hover:bg-[#e0e0e0] transition-colors"
+                onClick={() => {
+                  if (endingReady) window.history.back();
+                }}
+                title={endingReady ? "Return to previous page" : "Power"}
+              />
             </div>
           </div>
         </div>

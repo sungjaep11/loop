@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../stores/gameStore';
 import { useAudioStore } from '../../stores/audioStore';
+import { playElevenLabsTts } from '../../utils/elevenlabsTts';
 
 const PASSWORD = 'S4V3_TH3_S0UL';
 const PHASE1_DIALOGUE = {
@@ -45,8 +46,14 @@ function generateRoundSequence(stage, alreadyRevealed) {
     }
     return available.slice(0, len);
 }
-const BLACKOUT_TIME_MS = 14000;
+const BLACKOUT_TIME_MS = 28000;
 const BLACKOUT_HIT_RADIUS = 0.10;
+const DARK_CIRCLES_COLS = 8;
+const DARK_CIRCLES_ROWS = 6;
+const DARK_CIRCLES_COUNT = DARK_CIRCLES_COLS * DARK_CIRCLES_ROWS;
+const DARK_CIRCLE_BRIGHTNESS = 0.14;   // base (very dim)
+const DARK_CIRCLE_TARGET_DARKER = 0.06; // target is slightly darker
+const DARK_CIRCLES_ROUNDS_NEEDED = 5;
 const PASSWORD_TIME_MS = 22000;
 const GHOST_INSERT_INTERVAL_MS = 1600;
 const GHOST_INSERT = ['STAY', 'HELP', "DON'T", 'STOP', 'NO', 'REMAIN', 'OBEY', 'MINE'];
@@ -73,6 +80,9 @@ export function VeraEscapeSequence() {
     const [mouseInverted, setMouseInverted] = useState(false);
     const [blackoutVisible, setBlackoutVisible] = useState(false);
     const [hiddenButtonPos, setHiddenButtonPos] = useState({ x: 0.5, y: 0.5 });
+    const [darkCircles, setDarkCircles] = useState([]); // { x, y } in 0..1
+    const [darkCirclesTargetIndex, setDarkCirclesTargetIndex] = useState(-1);
+    const [darkCirclesRound, setDarkCirclesRound] = useState(0); // 0..5, need 5 correct to advance
     const [cursorPos, setCursorPos] = useState({ x: 0.5, y: 0.5 });
     const [deleteLines, setDeleteLines] = useState([]);
     const [phase3Red, setPhase3Red] = useState(false);
@@ -92,31 +102,17 @@ export function VeraEscapeSequence() {
     const streamRef = useRef(null);
     const [webcamActive, setWebcamActive] = useState(false);
 
-    // ——— TTS for V.E.R.A. dialogue ———
+    // ——— TTS for V.E.R.A. dialogue (ElevenLabs) ———
     useEffect(() => {
         if (!veraLine || veraLine === lastSpokenRef.current) return;
         lastSpokenRef.current = veraLine;
 
-        const synth = window.speechSynthesis;
-        if (!synth) return;
+        const ac = new AbortController();
+        playElevenLabsTts(veraLine, { signal: ac.signal }).catch(() => {});
 
-        synth.cancel();
-        const utterance = new SpeechSynthesisUtterance(veraLine);
-        utterance.rate = 1.1;
-        utterance.pitch = 0.9;
-
-        // Try to find a female English voice
-        const voices = synth.getVoices();
-        const preferred = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Victoria') || (v.lang.startsWith('en') && v.name.toLowerCase().includes('female')));
-        if (preferred) utterance.voice = preferred;
-        else {
-            const englishVoice = voices.find(v => v.lang.startsWith('en'));
-            if (englishVoice) utterance.voice = englishVoice;
-        }
-
-        synth.speak(utterance);
-
-        return () => synth.cancel();
+        return () => {
+            ac.abort();
+        };
     }, [veraLine]);
 
     // ——— Webcam for creepy "watching you" effect ———
@@ -158,6 +154,7 @@ export function VeraEscapeSequence() {
 
     // ——— Phase 0: Confirm ———
     const handleConfirmRun = () => {
+        playSFX?.('click');
         setShowConfirmModal(false);
         setPhase('progress');
         setProgress(0);
@@ -312,6 +309,8 @@ export function VeraEscapeSequence() {
         // Only revealed buttons are clickable
         if (!revealedButtons.has(index)) return;
 
+        playSFX?.('click');
+
         // Check if this button is one of the NEW buttons this round
         const isNewButton = roundSequence.includes(index);
 
@@ -382,14 +381,41 @@ export function VeraEscapeSequence() {
         return () => clearTimeout(t);
     }, [phase, setEnding]);
 
+    function generateDarkCircles() {
+        const paddingLeft = 0.12;
+        const paddingRight = 0.30;  // keep circles left of live feed (top-right)
+        const paddingTop = 0.28;    // keep circles below live feed
+        const paddingBottom = 0.38; // keep circles above the dialogue box (bottom-24)
+        const jitter = 0.02;
+        const circles = [];
+        const rangeX = 1 - paddingLeft - paddingRight;
+        const rangeY = 1 - paddingTop - paddingBottom;
+        for (let row = 0; row < DARK_CIRCLES_ROWS; row++) {
+            for (let col = 0; col < DARK_CIRCLES_COLS; col++) {
+                const baseX = paddingLeft + rangeX * (col + 0.5) / DARK_CIRCLES_COLS;
+                const baseY = paddingTop + rangeY * (row + 0.5) / DARK_CIRCLES_ROWS;
+                circles.push({
+                    x: baseX + (Math.random() - 0.5) * 2 * jitter,
+                    y: baseY + (Math.random() - 0.5) * 2 * jitter,
+                });
+            }
+        }
+        const target = Math.floor(Math.random() * circles.length);
+        return { circles, target };
+    }
+
     const handleContinueClick = () => {
         if (phase !== 'phase2_mouse') return;
+        playSFX?.('click');
         setProgress(50);
         setPhase('phase2_blackout');
         setMouseInverted(false);
         setVeraLine('Aren\'t you afraid of the dark?');
         setBlackoutVisible(true);
-        setHiddenButtonPos({ x: 0.3 + Math.random() * 0.4, y: 0.3 + Math.random() * 0.4 });
+        setDarkCirclesRound(0);
+        const { circles, target } = generateDarkCircles();
+        setDarkCircles(circles);
+        setDarkCirclesTargetIndex(target);
     };
 
     // ——— Phase 2: Blackout ———
@@ -402,20 +428,31 @@ export function VeraEscapeSequence() {
         return () => clearTimeout(t);
     }, [phase, setEnding]);
 
-    const handleHiddenButtonClick = (e) => {
+    const handleDarkCircleClick = (clickedIndex) => {
         if (phase !== 'phase2_blackout') return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        const bx = hiddenButtonPos.x;
-        const by = hiddenButtonPos.y;
-        if (Math.hypot(x - bx, y - by) < BLACKOUT_HIT_RADIUS) {
+        if (clickedIndex !== darkCirclesTargetIndex) {
+            playSFX?.('error');
+            setDarkCirclesRound(0);
+            const { circles, target } = generateDarkCircles();
+            setDarkCircles(circles);
+            setDarkCirclesTargetIndex(target);
+            return;
+        }
+        playSFX?.('click');
+        const nextRound = darkCirclesRound + 1;
+        if (nextRound >= DARK_CIRCLES_ROUNDS_NEEDED) {
+            playSFX?.('success');
             setProgress(70);
             setPhase('phase2_delete');
             setBlackoutVisible(false);
             setVeraLine('To leave... you must leave everything behind.');
             setDeleteLines(['[Deleting] My Documents...', '[Deleting] Recycle Bin...', '[Deleting] Your memories...', '[Deleting] Your name...', '[Deleting] The last traces...']);
+            return;
         }
+        setDarkCirclesRound(nextRound);
+        const { circles, target } = generateDarkCircles();
+        setDarkCircles(circles);
+        setDarkCirclesTargetIndex(target);
     };
 
     // ——— Phase 2: Fake delete ———
@@ -567,9 +604,9 @@ export function VeraEscapeSequence() {
                 </>
             )}
 
-            {/* Creepy Webcam + System Info "I Know Everything" Effect */}
+            {/* Creepy Webcam + System Info — show whenever webcam is active (including after "target identified") */}
             <AnimatePresence>
-                {webcamActive && phase !== 'confirm' && phase !== 'progress' && (
+                {webcamActive && !['confirm', 'progress'].includes(phase) && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{
@@ -634,14 +671,14 @@ export function VeraEscapeSequence() {
                                 <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500/70" />
                                 <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500/70" />
 
-                                {/* "TARGET ACQUIRED" overlay */}
+                                {/* "TARGET IDENTIFIED" — subtle overlay so camera feed stays visible */}
                                 <motion.div
-                                    className="absolute inset-0 flex items-center justify-center"
+                                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
                                     initial={{ opacity: 0 }}
-                                    animate={{ opacity: [0, 1, 0] }}
+                                    animate={{ opacity: [0, 0.5, 0] }}
                                     transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
                                 >
-                                    <span className="text-red-500 text-xs font-mono tracking-widest drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]">
+                                    <span className="text-red-500/90 text-xs font-mono tracking-widest drop-shadow-[0_0_10px_rgba(220,38,38,0.8)] bg-black/30 px-2 py-0.5 rounded">
                                         TARGET IDENTIFIED
                                     </span>
                                 </motion.div>
@@ -766,31 +803,35 @@ export function VeraEscapeSequence() {
                                 <div className="flex gap-4 justify-center">
                                     <motion.button
                                         type="button"
-                                        onClick={() => setShowConfirmModal(false)}
-                                        className="px-6 py-2.5 font-mono text-sm font-medium rounded-lg cursor-pointer transition-all duration-200"
+                                        onClick={() => { playSFX?.('click'); setShowConfirmModal(false); }}
+                                        className="px-6 py-2.5 font-mono text-sm font-medium rounded-lg cursor-pointer"
                                         style={{
-                                            background: 'linear-gradient(180deg, rgba(75,85,99,0.8) 0%, rgba(55,65,81,0.9) 100%)',
-                                            border: '1px solid rgba(107,114,128,0.5)',
+                                            background: 'linear-gradient(180deg, #4b5563 0%, #374151 50%, #1f2937 100%)',
+                                            border: '1px solid rgba(107,114,128,0.6)',
+                                            borderTopColor: 'rgba(156,163,175,0.5)',
                                             color: '#e5e7eb',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                            boxShadow: '0 5px 0 #1f2937, 0 6px 0 rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
                                         }}
-                                        whileHover={{ scale: 1.02, boxShadow: '0 6px 16px rgba(0,0,0,0.4)' }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={{ scale: 1.03, boxShadow: '0 6px 0 #1f2937, 0 8px 0 rgba(0,0,0,0.3), 0 12px 24px rgba(0,0,0,0.45)' }}
+                                        whileTap={{ y: 4, boxShadow: '0 1px 0 #1f2937, 0 2px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.2)' }}
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     >
                                         Cancel
                                     </motion.button>
                                     <motion.button
                                         type="button"
                                         onClick={handleConfirmRun}
-                                        className="px-6 py-2.5 font-mono text-sm font-bold rounded-lg cursor-pointer transition-all duration-200"
+                                        className="px-6 py-2.5 font-mono text-sm font-bold rounded-lg cursor-pointer"
                                         style={{
-                                            background: 'linear-gradient(180deg, rgba(220,38,38,0.9) 0%, rgba(185,28,28,0.95) 100%)',
-                                            border: '1px solid rgba(248,113,113,0.4)',
+                                            background: 'linear-gradient(180deg, #dc2626 0%, #b91c1c 50%, #7f1d1d 100%)',
+                                            border: '1px solid rgba(248,113,113,0.5)',
+                                            borderTopColor: 'rgba(254,202,202,0.4)',
                                             color: '#fff',
-                                            boxShadow: '0 4px 16px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                                            boxShadow: '0 5px 0 #7f1d1d, 0 6px 0 rgba(0,0,0,0.3), 0 10px 24px rgba(220,38,38,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
                                         }}
-                                        whileHover={{ scale: 1.02, boxShadow: '0 6px 24px rgba(220,38,38,0.5)' }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={{ scale: 1.03, boxShadow: '0 6px 0 #7f1d1d, 0 8px 0 rgba(0,0,0,0.3), 0 12px 28px rgba(220,38,38,0.4)' }}
+                                        whileTap={{ y: 4, boxShadow: '0 1px 0 #7f1d1d, 0 2px 10px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.25)' }}
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     >
                                         Run
                                     </motion.button>
@@ -802,13 +843,20 @@ export function VeraEscapeSequence() {
             </AnimatePresence>
             {phase === 'confirm' && !showConfirmModal && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <button
+                    <motion.button
                         type="button"
-                        onClick={() => setShowConfirmModal(true)}
-                        className="px-6 py-3 bg-cyan-700 hover:bg-cyan-600 border border-cyan-500 text-white font-mono rounded-lg cursor-pointer"
+                        onClick={() => { playSFX?.('click'); setShowConfirmModal(true); }}
+                        className="px-6 py-3 font-mono rounded-lg cursor-pointer text-white border border-cyan-400 border-t-cyan-300/50"
+                        style={{
+                            background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 50%, #155e75 100%)',
+                            boxShadow: '0 5px 0 #0c4a6e, 0 6px 0 rgba(0,0,0,0.25), 0 10px 24px rgba(8,145,178,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                        }}
+                        whileHover={{ scale: 1.05, boxShadow: '0 6px 0 #0c4a6e, 0 8px 0 rgba(0,0,0,0.25), 0 12px 28px rgba(8,145,178,0.45)' }}
+                        whileTap={{ y: 4, boxShadow: '0 1px 0 #0c4a6e, 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(0,0,0,0.2)' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     >
                         Run KILL_PROCESS.exe
-                    </button>
+                    </motion.button>
                 </div>
             )}
 
@@ -889,26 +937,47 @@ export function VeraEscapeSequence() {
                                     type="button"
                                     onClick={() => handleGridButtonClick(index)}
                                     disabled={showPhase === 'showing' || !isRevealed}
-                                    className={`aspect-square min-h-0 w-full rounded-full p-0 border-0 transition-all duration-300 ${!isRevealed ? 'opacity-0 pointer-events-none scale-0' : 'opacity-100 cursor-pointer'}`}
-                                    style={{
-                                        boxShadow: isRevealed ? '0 6px 0 rgba(0,0,0,0.4), 0 8px 20px rgba(220,38,38,0.3)' : 'none',
-                                    }}
+                                    className={`aspect-square min-h-0 w-full p-0 border-0 transition-all duration-300 group ${!isRevealed ? 'opacity-0 pointer-events-none scale-0' : 'opacity-100 cursor-pointer'}`}
+                                    style={{ borderRadius: '50%' }}
                                     initial={false}
                                     animate={{
                                         scale: isRevealed ? 1 : 0,
                                         opacity: isRevealed ? 1 : 0,
                                     }}
                                     transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-                                    whileHover={isRevealed ? { scale: 1.05 } : {}}
-                                    whileTap={showPhase === 'input' && isRevealed ? { scale: 0.92, y: 3 } : {}}
+                                    whileHover={isRevealed ? { scale: 1.06 } : {}}
                                     aria-label={`Button ${index + 1}`}
                                 >
-                                    <span
-                                        className={`block w-full h-full rounded-full border-2 transition-all duration-150 ${isRevealed
-                                            ? 'bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-[inset_0_3px_6px_rgba(255,255,255,0.2),inset_0_-3px_6px_rgba(0,0,0,0.4)] border-red-400/60'
-                                            : 'bg-transparent border-transparent'
-                                            }`}
-                                    />
+                                    {/* 3D arcade-style red button */}
+                                    <div className={`relative w-full h-full ${isRevealed ? '' : 'invisible'}`}>
+                                        {/* Bottom rim (dark red edge for 3D depth) — visible when raised */}
+                                        <div
+                                            className="absolute inset-0 rounded-full transition-transform duration-75 group-active:translate-y-[3%]"
+                                            style={{
+                                                background: 'linear-gradient(180deg, #6b1010 0%, #4a0c0c 50%, #2d0606 100%)',
+                                                transform: 'translateY(10%)',
+                                            }}
+                                        />
+                                        {/* Main button top (shiny red dome) — moves down on press */}
+                                        <div
+                                            className="absolute inset-[6%] rounded-full transition-all duration-75 group-active:translate-y-[8%] group-active:inset-[7%]"
+                                            style={{
+                                                background: 'radial-gradient(ellipse 65% 45% at 35% 30%, #ff7878 0%, #ef4444 25%, #dc2626 50%, #b91c1c 80%, #881414 100%)',
+                                                boxShadow: 'inset 0 -3px 6px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25)',
+                                            }}
+                                        />
+                                        {/* Highlight shine — fades on press */}
+                                        <div
+                                            className="absolute rounded-full transition-opacity duration-75 group-active:opacity-30"
+                                            style={{
+                                                top: '12%',
+                                                left: '18%',
+                                                width: '40%',
+                                                height: '22%',
+                                                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%)',
+                                            }}
+                                        />
+                                    </div>
                                 </motion.button>
                             );
                         })}
@@ -932,13 +1001,20 @@ export function VeraEscapeSequence() {
             {/* Phase 2 inverted mouse: CONTINUE button (hit by logical cursor) */}
             {phase === 'phase2_mouse' && (
                 <div className="absolute inset-0 flex items-center justify-center z-20">
-                    <button
+                    <motion.button
                         type="button"
                         onClick={handleContinueClick}
-                        className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 border-2 border-cyan-400 text-white font-mono font-bold rounded-lg cursor-pointer"
+                        className="px-8 py-4 font-mono font-bold rounded-lg cursor-pointer text-white border-2 border-cyan-400 border-t-cyan-300/60"
+                        style={{
+                            background: 'linear-gradient(180deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
+                            boxShadow: '0 6px 0 #0c4a6e, 0 8px 0 rgba(0,0,0,0.3), 0 12px 28px rgba(6,182,212,0.4), inset 0 1px 0 rgba(255,255,255,0.25)',
+                        }}
+                        whileHover={{ scale: 1.05, boxShadow: '0 8px 0 #0c4a6e, 0 10px 0 rgba(0,0,0,0.3), 0 14px 32px rgba(6,182,212,0.45)' }}
+                        whileTap={{ y: 5, boxShadow: '0 1px 0 #0c4a6e, 0 2px 10px rgba(0,0,0,0.35), inset 0 2px 6px rgba(0,0,0,0.2)' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     >
                         CONTINUE
-                    </button>
+                    </motion.button>
                 </div>
             )}
 
@@ -954,21 +1030,37 @@ export function VeraEscapeSequence() {
                 />
             )}
 
-            {/* Phase 2 blackout */}
-            {phase === 'phase2_blackout' && (
-                <div
-                    className="absolute inset-0 bg-black z-30 cursor-pointer"
-                    onClick={handleHiddenButtonClick}
-                >
-                    <div
-                        className="absolute w-8 h-8 rounded-full bg-cyan-500/25 border border-cyan-400/40 animate-pulse"
-                        style={{
-                            left: `${hiddenButtonPos.x * 100}%`,
-                            top: `${hiddenButtonPos.y * 100}%`,
-                            transform: 'translate(-50%, -50%)',
-                            boxShadow: '0 0 12px rgba(0,255,255,0.2)',
-                        }}
-                    />
+            {/* Phase 2 blackout: many circles, one slightly darker; 5 rounds to advance */}
+            {phase === 'phase2_blackout' && darkCircles.length > 0 && (
+                <div className="absolute inset-0 bg-black z-30 flex items-center justify-center">
+                    <div className="absolute top-8 left-1/2 -translate-x-1/2 font-mono text-sm text-white/50 z-10">
+                        {darkCirclesRound}/{DARK_CIRCLES_ROUNDS_NEEDED}
+                    </div>
+                    <div className="absolute inset-0 w-full h-full">
+                        {darkCircles.map((pos, index) => {
+                            const isTarget = index === darkCirclesTargetIndex;
+                            const brightness = isTarget
+                                ? DARK_CIRCLE_BRIGHTNESS - DARK_CIRCLE_TARGET_DARKER
+                                : DARK_CIRCLE_BRIGHTNESS;
+                            return (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    className="absolute rounded-full cursor-pointer border-0 p-0 transition-opacity duration-150 hover:opacity-90 focus:outline-none focus:ring-0"
+                                    style={{
+                                        left: `${pos.x * 100}%`,
+                                        top: `${pos.y * 100}%`,
+                                        transform: 'translate(-50%, -50%)',
+                                        width: 'clamp(20px, 4vw, 32px)',
+                                        height: 'clamp(20px, 4vw, 32px)',
+                                        backgroundColor: `rgba(255, 255, 255, ${brightness})`,
+                                    }}
+                                    onClick={() => handleDarkCircleClick(index)}
+                                    aria-label={isTarget ? 'Correct circle' : 'Circle'}
+                                />
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 
