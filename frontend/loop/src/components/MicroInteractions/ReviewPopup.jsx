@@ -26,7 +26,7 @@ const ReviewPopup = ({ onClose }) => {
             width: '300px',
             animation: 'slideUp 0.5s ease-out'
         }}>
-            <div style={{ fontWeight: 600, marginBottom: '10px' }}>How do you like working with AIDRA?</div>
+            <div style={{ fontWeight: 600, marginBottom: '10px' }}>How do you like working with VERA?</div>
             <div style={{ display: 'flex', gap: '8px', fontSize: '1.5rem', cursor: 'pointer' }}>
                 {[1, 2, 3, 4, 5].map((star, i) => (
                     <span

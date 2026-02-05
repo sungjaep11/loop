@@ -58,15 +58,32 @@ let ambientAudio = null;
 // External CDN URLs (e.g. Pixabay) often return 403 when embedded. Use relative path to self-hosted file or skip.
 const AMBIENT_URL = null; // e.g. '/loop/audio/ambient.mp3' if you add a file to public
 
+/** Get the shared AudioContext for TTS playback. Resumes if suspended. Call after user gesture (initAudio) so TTS can play without another click. */
+export function getTtsAudioContext() {
+    if (typeof window === 'undefined' || !synth.ctx) return null;
+    if (synth.ctx.state === 'suspended') synth.ctx.resume();
+    return synth.ctx;
+}
+
 export const useAudioStore = create((set, get) => ({
     audioEnabled: true,
     masterVolume: 0.5,
     isInitialized: false,
     currentAmbient: null,
+    ttsUnlocked: false,
 
     initAudio: () => {
         if (synth.ctx && synth.ctx.state === 'suspended') {
             synth.ctx.resume();
+        }
+        // Unlock HTML Audio (for TTS) – one play() from user gesture allows later TTS in the session
+        if (typeof window !== 'undefined' && !get().ttsUnlocked) {
+            set({ ttsUnlocked: true });
+            try {
+                const silent = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+                silent.volume = 0;
+                silent.play().catch(() => {});
+            } catch (_) {}
         }
         set({ isInitialized: true });
     },

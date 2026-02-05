@@ -64,7 +64,7 @@ const ResistanceScene = ({ onComplete }) => {
 
         if (cursorPos.x < width * 0.3) {
             // Left Zone (Discard)
-            // AIDRA likes this.
+            // VERA likes this.
             setMessage("Wise choice. Resignation discarded.");
             setTimeout(onComplete, 1000);
         } else if (cursorPos.x > width * 0.7) {
@@ -75,7 +75,7 @@ const ResistanceScene = ({ onComplete }) => {
 
     const triggerResistance = () => {
         setAutoCorrect(true);
-        setMessage("AIDRA: Request denied. Employees cannot resign during lockdown.");
+        setMessage("VERA: Request denied. Employees cannot resign during lockdown.");
 
         // Animation: Move file back to Left (Discard)
         setTimeout(() => {

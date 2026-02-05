@@ -71,7 +71,7 @@ const PeerReview = ({ onComplete }) => {
                         height: '80px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.8rem'
                     }}>
                         <div style={{ color: 'blue' }}>[SYS] Connection established.</div>
-                        <div style={{ color: '#00af00' }}>[AIDRA] Submit your review.</div>
+                        <div style={{ color: '#00af00' }}>[VERA] Submit your review.</div>
                         <div style={{ color: 'red' }}>[B-404] HELP ME HELP ME HELP ME PLEASE I DIDNT MEAN TO</div>
                         <div style={{ color: 'red' }}>[B-404] IT WAS AN ACCIDENT</div>
                     </div>

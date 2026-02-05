@@ -6,7 +6,7 @@ import { useAudioStore } from '../../stores/audioStore';
 export function ResignationForm() {
     const [denied, setDenied] = useState(false);
     const [resistanceStage, setResistanceStage] = useState(0); // 0, 1, 2, 3 (fail)
-    const [aidraWarnings, setAidraWarnings] = useState([]);
+    const [veraWarnings, setVeraWarnings] = useState([]);
     const controls = useAnimation(); // To control form position programmatically
 
     const setScene = useGameStore((s) => s.setScene);
@@ -25,15 +25,15 @@ export function ResignationForm() {
             // Check thresholds for stages
             if (resistanceStage === 0 && x > 50) {
                 setResistanceStage(1);
-                setAidraWarnings(prev => ["What are you doing, #402?", "You just started.", "Give it more time."]);
+                setVeraWarnings(prev => ["What are you doing, #402?", "You just started.", "Give it more time."]);
                 playSFX('error'); // Subtle warning
             } else if (resistanceStage === 1 && x > 150) {
                 setResistanceStage(2);
-                setAidraWarnings(prev => ["You can't leave.", "You signed the contract.", "Remember?"]);
+                setVeraWarnings(prev => ["You can't leave.", "You signed the contract.", "Remember?"]);
                 playSFX('alarm'); // Louder
             } else if (resistanceStage === 2 && x > 250) {
                 setResistanceStage(3);
-                setAidraWarnings(prev => ["Y̷O̵U̶ ̸C̷A̵N̶N̵O̷T̸ ̵L̶E̸A̷V̵E̴", "T̶H̴E̵R̷E̶ ̵I̸S̷ ̶N̵O̶W̷H̴E̸R̵E̶ ̴T̷O̵ ̷G̶O̸", "Y̵O̷U̶ ̷A̸R̷E̴ ̶O̵U̷R̵S̶"]);
+                setVeraWarnings(prev => ["Y̷O̵U̶ ̸C̷A̵N̶N̵O̷T̸ ̵L̶E̸A̷V̵E̴", "T̶H̴E̵R̷E̶ ̵I̸S̷ ̶N̵O̶W̷H̴E̸R̵E̶ ̴T̷O̵ ̷G̶O̸", "Y̵O̷U̶ ̷A̸R̷E̴ ̶O̵U̷R̵S̶"]);
                 playSFX('glitch'); // Intense
             }
         }
@@ -210,9 +210,9 @@ export function ResignationForm() {
                 )}
             </motion.div>
 
-            {/* AIDRA warnings */}
+            {/* VERA warnings */}
             <div className="fixed bottom-12 left-1/2 -translate-x-1/2 space-y-2 z-50 pointer-events-none">
-                {aidraWarnings.map((warning, index) => (
+                {veraWarnings.map((warning, index) => (
                     <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 50 }}
@@ -221,7 +221,7 @@ export function ResignationForm() {
                         className={`px-6 py-3 rounded shadow-lg font-mono text-sm border-l-4 
                         ${resistanceStage > 1 ? 'bg-red-900 text-white border-red-500' : 'bg-white text-black border-neogen-accent'}`}
                     >
-                        <span className="font-bold mr-2">{resistanceStage > 2 ? 'A̷I̷D̶R̵A̴' : 'AIDRA'}:</span>
+                        <span className="font-bold mr-2">{resistanceStage > 2 ? 'V̷E̵R̶A̴' : 'VERA'}:</span>
                         "{warning}"
                     </motion.div>
                 ))}

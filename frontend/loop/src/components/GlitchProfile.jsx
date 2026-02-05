@@ -67,7 +67,7 @@ const GlitchProfile = ({ onComplete }) => {
 
         // Auto terminate this scene after some time if they don't click anything? 
         // Or wait for user interaction to close?
-        // Prompt says: AIDRA says "Error. Close it immediately."
+        // Prompt says: VERA says "Error. Close it immediately."
     };
 
     const handleClose = () => {
@@ -143,7 +143,7 @@ const GlitchProfile = ({ onComplete }) => {
                     alignItems: 'center',
                     flexDirection: 'column'
                 }}>
-                    {/* AIDRA Warning */}
+                    {/* VERA Warning */}
                     <div style={{
                         color: '#ff4444',
                         fontFamily: "'Space Mono', monospace",

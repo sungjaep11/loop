@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { GameController } from './components/GameController';
 import { useGameStore } from './stores/gameStore';
 import { usePlayerStore } from './stores/playerStore';
+import { useAudio } from './hooks/useAudio';
 
 function App() {
   const setSessionStartTime = useGameStore((state) => state.setSessionStartTime);
   const collectSystemInfo = usePlayerStore((state) => state.collectSystemInfo);
+  useAudio(); // Unlock audio (SFX + TTS) on first click/keydown
 
   // Initialize game state on mount
   useEffect(() => {

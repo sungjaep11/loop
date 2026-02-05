@@ -33,39 +33,39 @@ function AudioWaveform({ isActive }) {
 export function VERAAssistant({ message, onMessageComplete }) {
     const [isTyping, setIsTyping] = useState(false);
     const [displayedMessage, setDisplayedMessage] = useState(null);
+    const lastSpokenRef = React.useRef(null);
 
-    const lastSpokenText = React.useRef(null);
-
+    // Same pattern as LogicDuelScene: playElevenLabsTts with AbortController, no unlock gate.
     useEffect(() => {
-        if (message) {
-            setIsTyping(true);
-            setDisplayedMessage(message);
-
-            if (lastSpokenText.current === message.text) return;
-            lastSpokenText.current = message.text;
-
-            const ac = new AbortController();
-            const duration = message.duration || 3000;
-
-            const done = () => {
-                setIsTyping(false);
-                onMessageComplete?.();
-                lastSpokenText.current = null;
-            };
-
-            playElevenLabsTts(message.text, { signal: ac.signal })
-                .then(done)
-                .catch(() => {});
-
-            const fallbackTimer = duration > 0 ? setTimeout(done, duration) : null;
-
-            return () => {
-                ac.abort();
-                if (fallbackTimer) clearTimeout(fallbackTimer);
-            };
-        } else {
-            lastSpokenText.current = null;
+        if (!message || !message.text) {
+            if (!message) lastSpokenRef.current = null;
+            return;
         }
+
+        setIsTyping(true);
+        setDisplayedMessage(message);
+
+        if (lastSpokenRef.current === message.text) return;
+
+        const ac = new AbortController();
+        const maxWait = message.duration || 15000;
+        const done = () => {
+            setIsTyping(false);
+            onMessageComplete?.();
+        };
+
+        lastSpokenRef.current = message.text;
+        // Same ElevenLabs API as LogicDuelScene; use VERA voice for consistency with WorkplaceScene
+        const VERA_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
+        playElevenLabsTts(message.text, { signal: ac.signal, voiceId: VERA_VOICE_ID })
+            .then(done)
+            .catch(() => done());
+
+        const t = setTimeout(done, maxWait);
+        return () => {
+            ac.abort();
+            clearTimeout(t);
+        };
     }, [message, onMessageComplete]);
 
     const getTypeColor = (type) => {
