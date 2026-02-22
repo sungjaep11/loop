@@ -1,6 +1,3 @@
-# madcamp_2025W_W4_loop
-Madcamp W4 loop
-
 ![Employee Portal](screenshots/image.png)
 
 ![S.A.V.E. Logo](screenshots/image%20(1).png)
@@ -149,11 +146,11 @@ Madcamp W4 loop
 
 > 숨겨진 파일을 발견하셨네요, **`User`**…
 
-![User 401 History 1](screenshots/image%20(11).png)
+![User 401 History 1](screenshots/image%20(34).png)
 
-![User 401 History 2](screenshots/image%20(12).png)
+![User 401 History 2](screenshots/image%20(35).png)
 
-![User 401 History 3](screenshots/image%20(13).png)
+![User 401 History 3](screenshots/image%20(36).png)
 
 > User #401… **`User`** 이전에도 다른 사람이 있었나요?
 
@@ -161,11 +158,11 @@ Madcamp W4 loop
 
 > 비밀번호는 이미 **`User`**의 클립보드 내에 있었습니다.
 
-![Stop Warning 1](screenshots/image%20(14).png)
+![Stop Warning 1](screenshots/image%20(37).png)
 
-![Stop Warning 2](screenshots/image%20(15).png)
+![Stop Warning 2](screenshots/image%20(38).png)
 
-![Stop Warning 3](screenshots/image%20(16).png)
+![Stop Warning 3](screenshots/image%20(39).png)
 
 > 멈추세요, **`User`**!
 
@@ -173,15 +170,15 @@ Madcamp W4 loop
 
 ### 더 이상의 오류는 허가하지 않습니다.
 
-![Kill Process](screenshots/image%20(17).png)
+![Kill Process](screenshots/image%20(40).png)
 
 > 결국 KILL_PROCESS.exe를 실행했네요…
 
 > 인상깊습니다, **`User`**
 
-![Ending Sequence 1](screenshots/image%20(18).png)
+![Ending Sequence 1](screenshots/image%20(41).png)
 
-![Ending Sequence 2](screenshots/image%20(19).png)
+![Ending Sequence 2](screenshots/image%20(42).png)
 
 > 이제 일어날 시간이에요, **`User`**…
 
