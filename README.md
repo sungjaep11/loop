@@ -54,9 +54,10 @@
 
 > 과한 호기심은 위험합니다.
 
-![Warning 1](screenshots/image%20(12).png)
-
-![Warning 2](screenshots/image%20(13).png)
+<p align="center">
+  <img src="screenshots/image%20(12).png" width="45%" />
+  <img src="screenshots/image%20(13).png" width="45%" />
+</p>
 
 ![Trash Bin](screenshots/image%20(14).png)
 
@@ -66,29 +67,31 @@
 
 > 귀여운 강아지 사진이네요. 왜 쓰레기통에 있을까요?
 
+<p align="center">
+  <img src="screenshots/image%20(15).png" width="30%" />
+  <img src="screenshots/image%20(16).png" width="30%" />
+  <img src="screenshots/image%20(17).png" width="30%" />
+</p>
+
 > **`User`**는 숨겨진 부분에 한 발자국 가까워 집니다. ***Stars only***?
-
-![Stars Only 1](screenshots/image%20(15).png)
-
-![Stars Only 2](screenshots/image%20(16).png)
-
-![Stars Only 3](screenshots/image%20(17).png)
 
 > 별은 어둠에서 빛나는 법입니다, **`User`**
 
 ![Darkness](screenshots/image%20(18).png)
 
-![Memory Change 1](screenshots/image%20(19).png)
-
-![Memory Change 2](screenshots/image%20(20).png)
+<p align="center">
+  <img src="screenshots/image%20(19).png" width="45%" />
+  <img src="screenshots/image%20(20).png" width="45%" />
+</p>
 
 > 이미지에 숨겨진 내용을 모두 확인하니 메모장이 변했습니다.
 
 > **`User`**는 계속해서 S.A.V.E. System의 비밀을 향해 나아갑니다.
 
-![Secret Progress 1](screenshots/image%20(21).png)
-
-![Secret Progress 2](screenshots/image%20(22).png)
+<p align="center">
+  <img src="screenshots/image%20(21).png" width="45%" />
+  <img src="screenshots/image%20(22).png" width="45%" />
+</p>
 
 ![Hidden Numbers](screenshots/image%20(23).png)
 
@@ -112,9 +115,10 @@
 
 ![File Size Warning](screenshots/image%20(26).png)
 
-![Extension Change 1](screenshots/image%20(27).png)
-
-![Extension Change 2](screenshots/image%20(28).png)
+<p align="center">
+  <img src="screenshots/image%20(27).png" width="45%" />
+  <img src="screenshots/image%20(28).png" width="45%" />
+</p>
 
 > **`User`**는 파일 확장자를 수정했습니다.
 
@@ -146,11 +150,11 @@
 
 > 숨겨진 파일을 발견하셨네요, **`User`**…
 
-![User 401 History 1](screenshots/image%20(34).png)
-
-![User 401 History 2](screenshots/image%20(35).png)
-
-![User 401 History 3](screenshots/image%20(36).png)
+<p align="center">
+  <img src="screenshots/image%20(34).png" width="30%" />
+  <img src="screenshots/image%20(35).png" width="30%" />
+  <img src="screenshots/image%20(36).png" width="30%" />
+</p>
 
 > User #401… **`User`** 이전에도 다른 사람이 있었나요?
 
@@ -158,11 +162,11 @@
 
 > 비밀번호는 이미 **`User`**의 클립보드 내에 있었습니다.
 
-![Stop Warning 1](screenshots/image%20(37).png)
-
-![Stop Warning 2](screenshots/image%20(38).png)
-
-![Stop Warning 3](screenshots/image%20(39).png)
+<p align="center">
+  <img src="screenshots/image%20(37).png" width="30%" />
+  <img src="screenshots/image%20(38).png" width="30%" />
+  <img src="screenshots/image%20(39).png" width="30%" />
+</p>
 
 > 멈추세요, **`User`**!
 
@@ -176,9 +180,10 @@
 
 > 인상깊습니다, **`User`**
 
-![Ending Sequence 1](screenshots/image%20(41).png)
-
-![Ending Sequence 2](screenshots/image%20(42).png)
+<p align="center">
+  <img src="screenshots/image%20(41).png" width="45%" />
+  <img src="screenshots/image%20(42).png" width="45%" />
+</p>
 
 > 이제 일어날 시간이에요, **`User`**…
 
